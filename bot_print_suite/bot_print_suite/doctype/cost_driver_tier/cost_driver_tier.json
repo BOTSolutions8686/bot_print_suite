@@ -1,0 +1,26 @@
+{
+ "actions": [],
+ "creation": "2026-07-26 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": ["qty_from", "qty_to", "rate"],
+ "fields": [
+  {"fieldname": "qty_from", "fieldtype": "Int", "label": "From Qty", "reqd": 1, "in_list_view": 1,
+   "description": "Inclusive lower bound of this tier (in whatever unit the driver's Measurement Basis uses - sheets, pieces, cm\u00b2)."},
+  {"fieldname": "qty_to", "fieldtype": "Int", "label": "To Qty", "reqd": 1, "in_list_view": 1,
+   "description": "Inclusive upper bound of this tier. Use a large number (e.g. 999999) for the top-open tier."},
+  {"fieldname": "rate", "fieldtype": "Currency", "label": "Rate", "reqd": 1, "in_list_view": 1,
+   "description": "Rate that applies within this tier, in the driver's Measurement Basis unit (e.g. SAR per 1000 sheets)."}
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Cost Driver Tier",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,38 @@
+{
+ "actions": [],
+ "creation": "2026-07-24 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "ink_section", "ink_coverage_light", "ink_coverage_medium", "ink_coverage_heavy",
+  "ink_rate_per_sqm", "cb1",
+  "default_bleed_mm", "default_gutter_mm", "default_plate_rate",
+  "packing_section", "sheets_per_carton"
+ ],
+ "fields": [
+  {"fieldname": "ink_section", "fieldtype": "Section Break", "label": "Ink Coverage Factors"},
+  {"fieldname": "ink_coverage_light", "fieldtype": "Float", "label": "Light Coverage Factor", "default": "0.15"},
+  {"fieldname": "ink_coverage_medium", "fieldtype": "Float", "label": "Medium Coverage Factor", "default": "0.35"},
+  {"fieldname": "ink_coverage_heavy", "fieldtype": "Float", "label": "Heavy Coverage Factor", "default": "0.65"},
+  {"fieldname": "ink_rate_per_sqm", "fieldtype": "Currency", "label": "Ink Rate per m\u00b2 (per colour)", "default": "0.05"},
+  {"fieldname": "cb1", "fieldtype": "Column Break"},
+  {"fieldname": "default_bleed_mm", "fieldtype": "Float", "label": "Default Bleed (mm)", "default": "3"},
+  {"fieldname": "default_gutter_mm", "fieldtype": "Float", "label": "Default Gutter (mm)", "default": "5"},
+  {"fieldname": "default_plate_rate", "fieldtype": "Currency", "label": "Default Plate Rate", "default": "45"},
+  {"fieldname": "packing_section", "fieldtype": "Section Break", "label": "Packing"},
+  {"fieldname": "sheets_per_carton", "fieldtype": "Int", "label": "GSM-Normalized Sheets per Carton", "default": "3000",
+   "description": "Mofeed's real packing convention: one carton holds this many '100gsm-equivalent A4 sheets'. Cartons = (Sheets Required \u00d7 Sheet Size's A4-Equivalent Count \u00d7 GSM \u00f7 100) \u00f7 this number. Cost per carton itself lives on the Packing Cost Driver's Rate field, not here."}
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Print Suite Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

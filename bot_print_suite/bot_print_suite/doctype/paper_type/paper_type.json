@@ -1,0 +1,46 @@
+{
+ "actions": [],
+ "autoname": "format:{paper_name}-{gsm}GSM",
+ "creation": "2026-07-26 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "paper_name", "gsm", "cb1", "rate_per_tonne",
+  "sb_conversion", "reems_per_tonne", "sheets_per_reem", "cb2",
+  "sheets_per_tonne", "cost_per_sheet", "notes"
+ ],
+ "fields": [
+  {"fieldname": "paper_name", "fieldtype": "Data", "label": "Paper Name", "reqd": 1, "in_list_view": 1,
+   "description": "e.g. Ivory, SBS Board, Art Paper. Matched against the Substrate field on a Print Estimate."},
+  {"fieldname": "gsm", "fieldtype": "Float", "label": "GSM", "reqd": 1, "in_list_view": 1,
+   "description": "Same paper name can have several weights, each its own record and its own real rate (heavier stock isn't just a linear multiple of a lighter one in real pricing)."},
+  {"fieldname": "cb1", "fieldtype": "Column Break"},
+  {"fieldname": "rate_per_tonne", "fieldtype": "Currency", "label": "Rate per Tonne", "reqd": 1, "in_list_view": 1,
+   "description": "What the mill/supplier charges per tonne for this specific paper name + weight."},
+  {"fieldname": "sb_conversion", "fieldtype": "Section Break", "label": "Reems & Sheets Conversion",
+   "description": "How this paper's own trade unit converts to a per-sheet cost - confirmed directly from the estimator, not assumed. This is deliberately NOT calculated from weight/area alone, since real reem sizes follow trade convention per paper type, not just physics."},
+  {"fieldname": "reems_per_tonne", "fieldtype": "Float", "label": "Reems per Tonne", "reqd": 1},
+  {"fieldname": "sheets_per_reem", "fieldtype": "Int", "label": "Sheets per Reem", "reqd": 1},
+  {"fieldname": "cb2", "fieldtype": "Column Break"},
+  {"fieldname": "sheets_per_tonne", "fieldtype": "Float", "label": "Sheets per Tonne (computed)", "read_only": 1,
+   "description": "Reems per Tonne x Sheets per Reem - filled in automatically."},
+  {"fieldname": "cost_per_sheet", "fieldtype": "Currency", "label": "Cost per Sheet (computed)", "read_only": 1,
+   "description": "Rate per Tonne / Sheets per Tonne - filled in automatically. This is the number that actually feeds every estimate using this paper."},
+  {"fieldname": "notes", "fieldtype": "Small Text", "label": "Notes",
+   "description": "Where this rate came from and how confident we are in it."}
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Paper Type",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Sales Manager", "share": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,248 @@
+[
+ {
+  "decline_floor_qty": 0,
+  "decline_floor_rate": 0.0,
+  "decline_start_qty": 0,
+  "decline_start_rate": 0.0,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Rolling",
+  "fixed_setup_cost": 0.0,
+  "is_tiered": 0,
+  "measurement_basis": "Flat Fee",
+  "modified": "2026-08-25 12:16:03.327104",
+  "name": "Rolling",
+  "notes": "ESTIMATE, not confirmed by Mofeed (Talha, 2026-08-19): cello/plastic wrap for boxing business cards. No real rate exists in the system for this yet - 20 SAR flat is a placeholder judgment call for a small bulk-wrap job, not a real quote. Confirm the real rate with Mofeed and update this record before relying on it for customer-facing pricing.",
+  "rate": 20.0,
+  "tiers": []
+ },
+ {
+  "decline_floor_qty": 0,
+  "decline_floor_rate": 0.0,
+  "decline_start_qty": 0,
+  "decline_start_rate": 0.0,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Plate",
+  "fixed_setup_cost": 0.0,
+  "is_tiered": 0,
+  "measurement_basis": "Per Colour",
+  "modified": "2026-08-03 12:42:41.793512",
+  "name": "Plate",
+  "notes": "Confirmed directly by Mofeed: 37.5 SAR per colour.",
+  "rate": 37.5,
+  "tiers": []
+ },
+ {
+  "decline_floor_qty": 0,
+  "decline_floor_rate": 0.0,
+  "decline_start_qty": 0,
+  "decline_start_rate": 0.0,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Printing",
+  "fixed_setup_cost": 0.0,
+  "is_tiered": 1,
+  "measurement_basis": "Per 1000 Sheets",
+  "modified": "2026-08-19 19:30:46.675820",
+  "name": "Printing",
+  "notes": "SUPERSEDED 2026-08-19 (Talha, live with Mofeed): full real tier table given directly, replacing the old fixed-100-plus-4-tier guess. No fixed setup cost in this version - verified at 125,000 sheets: (125000/1000)*75 = 9,375 vs Mofeed's real 9,350 (25 SAR off, essentially exact). Tiers (SAR per 1000 sheets): 0-1,000=450, 1,001-3,000=200, 3,001-5,000=180, 5,001-10,000=125, 10,001-50,000=90, 50,001-100,000=80, 100,001+=75.\n\nPREVIOUS (kept for reference): Tier table confirmed directly by Mofeed. The 100 SAR fixed setup cost was reverse-engineered to make the tiers match his real quoted 400 SAR for a 600-sheet job (100 + 600/1000*500 = 400, exact). Pending: his answer for the same job at 3,000 pieces, to confirm beyond one data point.",
+  "rate": 0.0,
+  "tiers": [
+   {
+    "qty_from": 0,
+    "qty_to": 1000,
+    "rate": 450.0
+   },
+   {
+    "qty_from": 1001,
+    "qty_to": 3000,
+    "rate": 200.0
+   },
+   {
+    "qty_from": 3001,
+    "qty_to": 5000,
+    "rate": 180.0
+   },
+   {
+    "qty_from": 5001,
+    "qty_to": 10000,
+    "rate": 125.0
+   },
+   {
+    "qty_from": 10001,
+    "qty_to": 50000,
+    "rate": 90.0
+   },
+   {
+    "qty_from": 50001,
+    "qty_to": 100000,
+    "rate": 80.0
+   },
+   {
+    "qty_from": 100001,
+    "qty_to": 999999999,
+    "rate": 75.0
+   }
+  ]
+ },
+ {
+  "decline_floor_qty": 0,
+  "decline_floor_rate": 0.0,
+  "decline_start_qty": 0,
+  "decline_start_rate": 0.0,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Die / Frame",
+  "fixed_setup_cost": 0.0,
+  "is_tiered": 0,
+  "measurement_basis": "Per cm2",
+  "modified": "2026-08-03 12:42:41.939535",
+  "name": "Die / Frame",
+  "notes": "Mofeed's own words: '15 halala per centimetre' - only matches his real quoted ~360 SAR as an AREA rate (die 53x45cm = 2385 cm2 x 0.15 = 357.75), not a linear one. Confirmed by testing both interpretations against his real number.",
+  "rate": 0.15,
+  "tiers": []
+ },
+ {
+  "decline_floor_qty": 0,
+  "decline_floor_rate": 0.0,
+  "decline_start_qty": 0,
+  "decline_start_rate": 0.0,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Cutting",
+  "fixed_setup_cost": 50.0,
+  "is_tiered": 1,
+  "measurement_basis": "Per 1000 Pieces",
+  "modified": "2026-08-19 18:53:53.745354",
+  "name": "Cutting",
+  "notes": "Confirmed by Talha with 5 real data points (1,000/5,000/10,000/50,000/100,000 pieces = 150/350/550/2,000/3,000 SAR). Fixed 50 SAR + tiered rate exactly reproduces all 5 points. Same table used for BOTH Cutting and Glue (Mofeed's own statement - identical pricing structure for both). Glue's 'extra per side' rule is STILL UNCONFIRMED - Talha described '10 SAR per side per 1000' but that doesn't reproduce his own worked example (2-side, 5000pcs = 600 SAR) - working backward suggests the real per-side rate is closer to 50, not 10. Left as single-side pricing only until clarified - do NOT apply a side multiplier without confirming the real formula.\n\nUPDATE 2026-08-19 (Talha): confirmed the tiered piece-quantity numbers above under-account for Ups per Sheet on real jobs - a 500,000pc/4-up job was computing 14,800 SAR, way too high. Binding layer (cost_driver_binding.py) now divides the computed Cutting cost by doc.ups before it lands on the estimate. NOT yet re-confirmed against a real Mofeed number at ups!=1 - the tier breakpoints themselves are still the original single-up-implied figures. Re-verify with him on the next real multi-up job.",
+  "rate": 0.0,
+  "tiers": [
+   {
+    "qty_from": 0,
+    "qty_to": 1000,
+    "rate": 100.0
+   },
+   {
+    "qty_from": 1001,
+    "qty_to": 5000,
+    "rate": 60.0
+   },
+   {
+    "qty_from": 5001,
+    "qty_to": 10000,
+    "rate": 50.0
+   },
+   {
+    "qty_from": 10001,
+    "qty_to": 50000,
+    "rate": 39.0
+   },
+   {
+    "qty_from": 50001,
+    "qty_to": 999999,
+    "rate": 29.5
+   }
+  ]
+ },
+ {
+  "decline_floor_qty": 0,
+  "decline_floor_rate": 0.0,
+  "decline_start_qty": 0,
+  "decline_start_rate": 0.0,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Glue - 1 Side",
+  "fixed_setup_cost": 0.0,
+  "is_tiered": 1,
+  "measurement_basis": "Per 1000 Pieces",
+  "modified": "2026-08-19 20:15:37.797300",
+  "name": "Glue - 1 Side",
+  "notes": "CORRECTED 2026-08-19 (Talha, live with Mofeed): the top tier was initially mistranscribed as 30/1000 with no clear upper bound (his message repeated '10000' for two different tiers). Corrected: top tier is 25/1000 starting at 150,000 pieces (matching the same 150,000 ceiling used for Printing and Lamination), with 30/1000 applying to the 50,001-150,000 band in between. Verified exactly: 500,000 pieces -> (500000/1000)*25 = 12,500, matching Mofeed's real number for this job exactly.\n\nPREVIOUS (kept for reference): SUPERSEDED 2026-08-19 (Talha, live with Mofeed): more accurate real tier table given directly, replacing the old fixed-50-plus-tier estimate. No fixed setup cost. Tiers (SAR per 1000 pieces): 0-1,000=150, 1,001-5,000=80, 5,001-10,000=55, 10,001-50,000=40, 50,001+=30. Verified at 500,000 pieces: (500000/1000)*30 = 15,000 vs Mofeed's real 14,500 for this job (~3.4% over - closest fit from the tier data given, not exact; NOT divided by ups, unlike Cutting - gluing is per-piece work, confirmed real: our 14,800 old-formula number was already close to his 14,500 without any ups adjustment).\n\nPREVIOUS (kept for reference): Confirmed by Talha with 5 real data points (1,000/5,000/10,000/50,000/100,000 pieces = 150/350/550/2,000/3,000 SAR). Fixed 50 SAR + tiered rate exactly reproduces all 5 points. Same table used for BOTH Cutting and Glue (Mofeed's own statement - identical pricing structure for both). Glue's 'extra per side' rule is STILL UNCONFIRMED - Talha described '10 SAR per side per 1000' but that doesn't reproduce his own worked example (2-side, 5000pcs = 600 SAR) - working backward suggests the real per-side rate is closer to 50, not 10. Left as single-side pricing only until clarified - do NOT apply a side multiplier without confirming the real formula.",
+  "rate": 0.0,
+  "tiers": [
+   {
+    "qty_from": 0,
+    "qty_to": 1000,
+    "rate": 150.0
+   },
+   {
+    "qty_from": 1001,
+    "qty_to": 5000,
+    "rate": 80.0
+   },
+   {
+    "qty_from": 5001,
+    "qty_to": 10000,
+    "rate": 55.0
+   },
+   {
+    "qty_from": 10001,
+    "qty_to": 50000,
+    "rate": 40.0
+   },
+   {
+    "qty_from": 50001,
+    "qty_to": 150000,
+    "rate": 30.0
+   },
+   {
+    "qty_from": 150001,
+    "qty_to": 999999999,
+    "rate": 25.0
+   }
+  ]
+ },
+ {
+  "decline_floor_qty": 0,
+  "decline_floor_rate": 0.0,
+  "decline_start_qty": 0,
+  "decline_start_rate": 0.0,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Artwork",
+  "fixed_setup_cost": 0.0,
+  "is_tiered": 0,
+  "measurement_basis": "Flat Fee",
+  "modified": "2026-08-03 12:42:41.941008",
+  "name": "Artwork",
+  "notes": "Flat 25 SAR lump sum, confirmed unconditional.",
+  "rate": 25.0,
+  "tiers": []
+ },
+ {
+  "decline_floor_qty": 0,
+  "decline_floor_rate": 0.0,
+  "decline_start_qty": 0,
+  "decline_start_rate": 0.0,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Packing",
+  "fixed_setup_cost": 0.0,
+  "is_tiered": 0,
+  "measurement_basis": "Per Carton",
+  "modified": "2026-08-19 20:06:00.061020",
+  "name": "Packing",
+  "notes": "SUPERSEDED 2026-08-19 (Talha, live with Mofeed): real packing formula, not a flat guess. Cartons = (Sheets Required x Sheet Size's A4-Equivalent Count x GSM / 100) / Print Suite Settings' Sheets per Carton. Cost = cartons x this driver's Rate (1.4 SAR/carton). Verified exactly against his real worked example: 125,000 sheets, 70x100 sheet (8 A4-equivalents), 300gsm, 3000 sheets/carton -> 1,000 cartons x 1.4 = 1,400 SAR, matching his real number exactly.\n\nPREVIOUS (kept for reference): Flat 50 SAR, confirmed. Was mislabelled 'Rolling' in an earlier misread of Mofeed's handwriting - corrected directly by Talha.",
+  "rate": 1.4,
+  "tiers": []
+ },
+ {
+  "decline_floor_qty": 150000,
+  "decline_floor_rate": 0.55,
+  "decline_start_qty": 1000,
+  "decline_start_rate": 0.8,
+  "docstatus": 0,
+  "doctype": "Cost Driver",
+  "driver_name": "Lamination",
+  "fixed_setup_cost": 0.0,
+  "is_tiered": 0,
+  "measurement_basis": "Per Sheet (Declining Rate)",
+  "modified": "2026-08-19 19:02:38.431634",
+  "name": "Lamination",
+  "notes": "Confirmed by Talha with Mofeed's real numbers, 2026-08-19: 0.80 SAR/sheet at 1,000 sheets, sliding down as volume grows to a floor of 0.55 SAR/sheet at 150,000 sheets - the floor never goes lower no matter how large the job. Only 2 real confirmed points, so the cost between them is modelled as a straight-line interpolation (see cost_driver_engine._linear_decline_rate) rather than invented tier breakpoints - the least assumption-laden model given the data we actually have. If Mofeed gives intermediate confirmed points later, worth checking whether the real curve is actually linear or bends.",
+  "rate": 0.0,
+  "tiers": []
+ }
+]

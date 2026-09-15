@@ -1,0 +1,24 @@
+{
+ "actions": [],
+ "creation": "2026-07-24 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": ["qty", "sheets_required", "subtotal", "sell_price"],
+ "fields": [
+  {"fieldname": "qty", "fieldtype": "Int", "label": "Quantity", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "sheets_required", "fieldtype": "Int", "label": "Sheets Required", "read_only": 1, "in_list_view": 1},
+  {"fieldname": "subtotal", "fieldtype": "Currency", "label": "Subtotal (Cost)", "read_only": 1, "permlevel": 1},
+  {"fieldname": "sell_price", "fieldtype": "Currency", "label": "Sell Price", "read_only": 1, "in_list_view": 1}
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Print Estimate Break Result",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,53 @@
+[
+ {
+  "columns": [
+   {
+    "column_name": "Prepress",
+    "indicator": "Gray",
+    "order": "[]",
+    "status": "Active"
+   },
+   {
+    "column_name": "Plates",
+    "indicator": "Gray",
+    "order": "[\n \"GA-JOB-2026-0001\"\n]",
+    "status": "Active"
+   },
+   {
+    "column_name": "Printing",
+    "indicator": "Gray",
+    "order": "[]",
+    "status": "Active"
+   },
+   {
+    "column_name": "Finishing",
+    "indicator": "Gray",
+    "order": "[]",
+    "status": "Active"
+   },
+   {
+    "column_name": "QC",
+    "indicator": "Gray",
+    "order": "[]",
+    "status": "Active"
+   },
+   {
+    "column_name": "Delivered",
+    "indicator": "Gray",
+    "order": "[\n \"GA-JOB-2026-0002\"\n]",
+    "status": "Active"
+   }
+  ],
+  "docstatus": 0,
+  "doctype": "Kanban Board",
+  "field_name": "custom_job_status",
+  "fields": null,
+  "filters": null,
+  "kanban_board_name": "Job Board",
+  "modified": "2026-07-25 20:33:32.208593",
+  "name": "Job Board",
+  "private": 0,
+  "reference_doctype": "Sales Order",
+  "show_labels": 1
+ }
+]

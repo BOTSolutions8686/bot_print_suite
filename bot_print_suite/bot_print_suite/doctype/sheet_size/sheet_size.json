@@ -1,0 +1,34 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:sheet_size_name",
+ "creation": "2026-07-24 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["sheet_size_name", "width_cm", "height_cm", "width_mm", "height_mm", "a4_equivalent_count", "description"],
+ "fields": [
+  {"fieldname": "sheet_size_name", "fieldtype": "Data", "label": "Sheet Size Name", "reqd": 1, "unique": 1, "in_list_view": 1, "description": "e.g. 70x100"},
+  {"fieldname": "width_cm", "fieldtype": "Float", "label": "Width (cm)", "reqd": 1, "in_list_view": 1,
+   "description": "The stock sheet's real width, e.g. 70 - matching how you'd naturally give it."},
+  {"fieldname": "height_cm", "fieldtype": "Float", "label": "Height (cm)", "reqd": 1, "in_list_view": 1,
+   "description": "The stock sheet's real height, e.g. 100."},
+  {"fieldname": "width_mm", "fieldtype": "Float", "label": "Width (mm, computed)", "read_only": 1},
+  {"fieldname": "height_mm", "fieldtype": "Float", "label": "Height (mm, computed)", "read_only": 1},
+  {"fieldname": "a4_equivalent_count", "fieldtype": "Int", "label": "A4-Equivalent Sheets per Press Sheet",
+   "description": "How many A4-size sheets Mofeed counts as fitting into one full press sheet of this size, for the Packing cost calculation (e.g. 8 for a 70x100cm sheet). Not a strict geometric imposition count - it's his own real counting convention, used as-is."},
+  {"fieldname": "description", "fieldtype": "Small Text", "label": "Description"}
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Sheet Size",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Sales Manager", "share": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

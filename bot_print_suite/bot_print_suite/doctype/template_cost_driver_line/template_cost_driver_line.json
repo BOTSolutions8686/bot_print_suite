@@ -1,0 +1,25 @@
+{
+ "actions": [],
+ "creation": "2026-07-26 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": ["cost_driver", "required", "default_enabled"],
+ "fields": [
+  {"fieldname": "cost_driver", "fieldtype": "Link", "label": "Cost Driver", "options": "Cost Driver", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "required", "fieldtype": "Check", "label": "Required", "default": "1", "in_list_view": 1,
+   "description": "If checked, this cost always applies for this product type (e.g. Die is required on Folding Carton). If unchecked, it shows as an optional add-on the estimator can turn on for this specific job (e.g. Die is optional on a standard-shape Business Card, only needed for custom shapes)."},
+  {"fieldname": "default_enabled", "fieldtype": "Check", "label": "On by Default", "default": "1", "in_list_view": 1,
+   "description": "Whether this line starts checked-on when the template is applied to a new estimate. Optional lines can still default to on or off depending on how common they are for this product type."}
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Template Cost Driver Line",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

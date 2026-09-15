@@ -1,0 +1,13 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Client Script",
+  "dt": "Sales Order",
+  "enabled": 1,
+  "modified": "2026-07-25 20:51:54.684200",
+  "module": null,
+  "name": "Job Tracker Strip",
+  "script": "frappe.ui.form.on('Sales Order', {\n\trefresh: function(frm) {\n\t\tif (frm.is_new()) return;\n\t\tfrappe.call({\n\t\t\tmethod: 'bot_print_suite.production.job_tracker.get_job_tracker_data',\n\t\t\targs: { sales_order: frm.doc.name },\n\t\t\tcallback: function(r) {\n\t\t\t\tif (!r.message) return;\n\t\t\t\trender_job_tracker(frm, r.message);\n\t\t\t}\n\t\t});\n\t}\n});\n\nfunction render_job_tracker(frm, data) {\n\tconst stages = data.stages;\n\tconst completed = data.completed;\n\tconst current = data.current_index;\n\tconst n = stages.length;\n\n\tlet dots = '';\n\tfor (let i = 0; i < n; i++) {\n\t\tconst cx = 5 + i * (90 / (n - 1));\n\t\tlet color = '#d1d5db'; // gray - not yet reached\n\t\tlet r = 5;\n\t\tif (completed[i]) { color = '#1D9E75'; } // teal - done\n\t\tif (i === current) { color = '#EF9F27'; r = 7; } // amber - current\n\t\tdots += `<circle cx=\"${cx}%\" cy=\"18\" r=\"${r}\" fill=\"${color}\"></circle>`;\n\t\tdots += `<text x=\"${cx}%\" y=\"34\" font-size=\"9\" text-anchor=\"middle\" fill=\"#6b7280\">${stages[i]}</text>`;\n\t}\n\n\tconst progress_pct = (current / (n - 1)) * 100;\n\tconst line = `<div style=\"position:relative;height:2px;background:#e5e7eb;margin:0 5%;\">\n\t\t<div style=\"position:absolute;left:0;top:0;height:2px;width:${progress_pct}%;background:#1D9E75;\"></div>\n\t</div>`;\n\n\tconst html = `\n\t\t<div style=\"padding:10px 0 24px 0;\">\n\t\t\t<svg width=\"100%\" height=\"40\" style=\"overflow:visible;\">${dots}</svg>\n\t\t\t<div style=\"text-align:center;font-size:12px;color:#374151;margin-top:2px;\">\n\t\t\t\t<b>${stages[current]}</b> — ${data.status_line}\n\t\t\t</div>\n\t\t</div>`;\n\n\tif (!frm.job_tracker_wrapper) {\n\t\tfrm.job_tracker_wrapper = $('<div class=\"job-tracker-strip\"></div>').prependTo(frm.layout.wrapper);\n\t}\n\tfrm.job_tracker_wrapper.html(html);\n}\n",
+  "view": "Form"
+ }
+]

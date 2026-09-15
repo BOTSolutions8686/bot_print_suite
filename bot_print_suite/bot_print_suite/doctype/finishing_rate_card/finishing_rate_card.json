@@ -1,0 +1,35 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "format:FRC-{operation}-{#####}",
+ "creation": "2026-07-24 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["operation", "unit_basis", "rate", "film_foil_type", "notes"],
+ "fields": [
+  {"fieldname": "operation", "fieldtype": "Select", "label": "Operation", "reqd": 1, "in_list_view": 1,
+   "options": "Lamination\nFoiling\nEmbossing\nUV Coating\nDie-cut\nGluing",
+   "description": "Appears as a selectable line on any Print Estimate's Finishing Operations table."},
+  {"fieldname": "unit_basis", "fieldtype": "Select", "label": "Unit Basis", "reqd": 1, "in_list_view": 1,
+   "options": "Per 1000 Sheets\nPer Sqm",
+   "description": "How this operation is priced - per 1,000 sheets run through it, or per square metre of coverage. Choose whichever matches how your shop actually bills this finishing step."},
+  {"fieldname": "rate", "fieldtype": "Currency", "label": "Rate", "reqd": 1, "in_list_view": 1,
+   "description": "Price per unit (per 1,000 sheets, or per m\u00b2, depending on Unit Basis above)."},
+  {"fieldname": "film_foil_type", "fieldtype": "Data", "label": "Film / Foil Type",
+   "description": "Optional - e.g. Gloss, Matte, Gold Foil. For your own reference, doesn't affect the calculation."},
+  {"fieldname": "notes", "fieldtype": "Small Text", "label": "Notes"}
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Finishing Rate Card",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Sales Manager", "share": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

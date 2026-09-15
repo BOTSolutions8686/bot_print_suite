@@ -1,0 +1,36 @@
+{
+ "actions": [],
+ "autoname": "format:ART-{sales_order}-{#####}",
+ "creation": "2026-07-24 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_order", "version_no", "cb1", "status",
+  "sb_file", "artwork_file", "customer_comment"
+ ],
+ "fields": [
+  {"fieldname": "sales_order", "fieldtype": "Link", "label": "Job Order (Sales Order)", "options": "Sales Order", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "version_no", "fieldtype": "Int", "label": "Version", "default": "1", "in_list_view": 1},
+  {"fieldname": "cb1", "fieldtype": "Column Break"},
+  {"fieldname": "status", "fieldtype": "Select", "label": "Status", "default": "Draft", "in_list_view": 1,
+   "options": "Draft\nSent to Customer\nApproved\nRevision Requested"},
+  {"fieldname": "sb_file", "fieldtype": "Section Break", "label": "Artwork"},
+  {"fieldname": "artwork_file", "fieldtype": "Attach", "label": "Artwork File"},
+  {"fieldname": "customer_comment", "fieldtype": "Small Text", "label": "Customer Comment"}
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Job Artwork",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Sales User", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Sales Manager", "share": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

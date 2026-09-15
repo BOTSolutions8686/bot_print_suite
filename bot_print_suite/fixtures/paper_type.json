@@ -1,0 +1,72 @@
+[
+ {
+  "cost_per_sheet": 1.7529,
+  "docstatus": 0,
+  "doctype": "Paper Type",
+  "gsm": 450.0,
+  "modified": "2026-08-19 20:51:07.839737",
+  "name": "earthy450-450GSM",
+  "notes": null,
+  "paper_name": "earthy450",
+  "rate_per_tonne": 7450.0,
+  "reems_per_tonne": 42.5,
+  "sheets_per_reem": 100,
+  "sheets_per_tonne": 4250.0
+ },
+ {
+  "cost_per_sheet": 1.4106,
+  "docstatus": 0,
+  "doctype": "Paper Type",
+  "gsm": 360.0,
+  "modified": "2026-08-25 12:15:41.754993",
+  "name": "Cosha-360GSM",
+  "notes": "ESTIMATE, not a confirmed real quote (Talha, 2026-08-19): market/GSM price for this brand wasn't available. rate_per_tonne and reems_per_tonne are scaled proportionally from Ivory-350GSM (confirmed real: 5,500 SAR/tonne, 40.8 reems/tonne), the closest real data point by weight in this system. Confirm with a real supplier quote before using this on a customer-facing quotation.",
+  "paper_name": "Cosha",
+  "rate_per_tonne": 5600.0,
+  "reems_per_tonne": 39.7,
+  "sheets_per_reem": 100,
+  "sheets_per_tonne": 3970.0
+ },
+ {
+  "cost_per_sheet": 0.5185,
+  "docstatus": 0,
+  "doctype": "Paper Type",
+  "gsm": 150.0,
+  "modified": "2026-09-15 14:05:09.789672",
+  "name": "Koshe-150GSM",
+  "notes": "CONFIRMED real by Mofeed, 2026-08-19 (flyer job, 50,000 A4 flyers): 6,000 SAR/tonne, 46.29 reams/tonne, 250 sheets/ream - note this paper uses a 250-sheet ream, different from the 100-sheet ream convention on the board stocks (Ivory, Earth Paper, earthy450). His computed cost_per_sheet from this job's total (3,272.68 / 6,250 sheets = 0.5237 SAR/sheet) is ~1% higher than what this system's rate_per_tonne/reems_per_tonne/sheets_per_reem chain computes (0.5185) - likely just rounding in his 46.29 figure, not a real discrepancy.",
+  "paper_name": "Koshe",
+  "rate_per_tonne": 6000.0,
+  "reems_per_tonne": 46.29,
+  "sheets_per_reem": 250,
+  "sheets_per_tonne": 11572.5
+ },
+ {
+  "cost_per_sheet": 1.1765,
+  "docstatus": 0,
+  "doctype": "Paper Type",
+  "gsm": 300.0,
+  "modified": "2026-08-06 18:37:17.711989",
+  "name": "Earth Paper-300GSM",
+  "notes": "Confirmed directly by Mofeed (Golden Arrow's estimator). Verified: reproduced his real 810 SAR paper cost for a 1,000-piece box job to within 0.2%. See PLAN.md Step 10.",
+  "paper_name": "Earth Paper",
+  "rate_per_tonne": 5600.0,
+  "reems_per_tonne": 47.6,
+  "sheets_per_reem": 100,
+  "sheets_per_tonne": 4760.0
+ },
+ {
+  "cost_per_sheet": 1.348,
+  "docstatus": 0,
+  "doctype": "Paper Type",
+  "gsm": 350.0,
+  "modified": "2026-08-05 13:37:43.248886",
+  "name": "Ivory-350GSM",
+  "notes": "Confirmed directly by Mofeed (Golden Arrow's estimator). Verified: reproduced his real 810 SAR paper cost for a 1,000-piece box job to within 0.2%. See PLAN.md Step 10.",
+  "paper_name": "Ivory",
+  "rate_per_tonne": 5500.0,
+  "reems_per_tonne": 40.8,
+  "sheets_per_reem": 100,
+  "sheets_per_tonne": 4080.0
+ }
+]

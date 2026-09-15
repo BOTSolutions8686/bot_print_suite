@@ -1,0 +1,24 @@
+[
+ {
+  "app": "bot_print_suite",
+  "bg_color": "gray",
+  "docstatus": 0,
+  "doctype": "Desktop Icon",
+  "hidden": 0,
+  "icon": "printing",
+  "icon_image": null,
+  "icon_type": "Link",
+  "label": "Print Suite",
+  "link": null,
+  "link_to": "Print Suite",
+  "link_type": "Workspace Sidebar",
+  "logo_url": null,
+  "modified": "2026-07-26 12:01:09.840732",
+  "name": "Print Suite",
+  "parent_icon": null,
+  "restrict_removal": 0,
+  "roles": [],
+  "sidebar": null,
+  "standard": 0
+ }
+]

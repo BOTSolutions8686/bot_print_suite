@@ -1,0 +1,155 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Product Estimation Template",
+  "drivers": [
+   {
+    "cost_driver": "Plate",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Printing",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Artwork",
+    "default_enabled": 1,
+    "required": 0
+   },
+   {
+    "cost_driver": "Packing",
+    "default_enabled": 1,
+    "required": 0
+   },
+   {
+    "cost_driver": "Cutting",
+    "default_enabled": 0,
+    "required": 0
+   },
+   {
+    "cost_driver": "Lamination",
+    "default_enabled": 0,
+    "required": 0
+   },
+   {
+    "cost_driver": "Die / Frame",
+    "default_enabled": 0,
+    "required": 0
+   },
+   {
+    "cost_driver": "Glue - 1 Side",
+    "default_enabled": 0,
+    "required": 0
+   },
+   {
+    "cost_driver": "Rolling",
+    "default_enabled": 0,
+    "required": 0
+   }
+  ],
+  "modified": "2026-09-15 14:27:05.637592",
+  "name": "Flyer",
+  "notes": null,
+  "product_type": "Flyer",
+  "template_name": "Flyer"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Product Estimation Template",
+  "drivers": [
+   {
+    "cost_driver": "Plate",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Printing",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Die / Frame",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Cutting",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Glue - 1 Side",
+    "default_enabled": 1,
+    "required": 0
+   },
+   {
+    "cost_driver": "Artwork",
+    "default_enabled": 1,
+    "required": 0
+   },
+   {
+    "cost_driver": "Packing",
+    "default_enabled": 1,
+    "required": 0
+   },
+   {
+    "cost_driver": "Lamination",
+    "default_enabled": 0,
+    "required": 0
+   }
+  ],
+  "modified": "2026-08-19 19:03:02.227746",
+  "name": "Folding Carton",
+  "notes": "Built and verified against Mofeed's real confirmed job (1,000 pieces) - see PLAN.md Step 10.",
+  "product_type": "Folding Carton",
+  "template_name": "Folding Carton"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Product Estimation Template",
+  "drivers": [
+   {
+    "cost_driver": "Plate",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Printing",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Cutting",
+    "default_enabled": 1,
+    "required": 1
+   },
+   {
+    "cost_driver": "Artwork",
+    "default_enabled": 1,
+    "required": 0
+   },
+   {
+    "cost_driver": "Packing",
+    "default_enabled": 1,
+    "required": 0
+   },
+   {
+    "cost_driver": "Die / Frame",
+    "default_enabled": 0,
+    "required": 0
+   },
+   {
+    "cost_driver": "Glue - 1 Side",
+    "default_enabled": 0,
+    "required": 0
+   }
+  ],
+  "modified": "2026-08-06 14:06:39.384792",
+  "name": "Business Card",
+  "notes": "Standard business cards: no die (guillotine cut), no glue. Both included as OPTIONAL, off by default, for the less common custom-shaped card. Not yet calibrated against a real Golden Arrow card job - built from what we know generalizes from the carton job, not independently confirmed.",
+  "product_type": "Commercial",
+  "template_name": "Business Card"
+ }
+]

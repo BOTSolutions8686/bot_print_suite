@@ -1,0 +1,34 @@
+{
+ "actions": [],
+ "autoname": "field:template_name",
+ "creation": "2026-07-26 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["template_name", "product_type", "cb1", "notes", "sb_drivers", "drivers"],
+ "fields": [
+  {"fieldname": "template_name", "fieldtype": "Data", "label": "Template Name", "reqd": 1, "unique": 1, "in_list_view": 1,
+   "description": "e.g. 'Folding Carton', 'Business Card - Standard', 'Sticker - Die Cut'."},
+  {"fieldname": "product_type", "fieldtype": "Select", "label": "Product Type", "in_list_view": 1,
+   "options": "Folding Carton\nCommercial\nLabel\nFlyer",
+   "description": "Reporting category, fetched onto every Print Estimate that uses this template. Was missing 'Flyer' until 2026-08-19 - the Flyer template had been left with this blank, so estimates using it were silently mis-tagged 'Folding Carton' (the Print Estimate field's default) instead of erroring. Keep this in sync whenever a genuinely new product category (e.g. Sticker) gets its own template."},
+  {"fieldname": "cb1", "fieldtype": "Column Break"},
+  {"fieldname": "notes", "fieldtype": "Small Text", "label": "Notes"},
+  {"fieldname": "sb_drivers", "fieldtype": "Section Break", "label": "Cost Drivers for this Product"},
+  {"fieldname": "drivers", "fieldtype": "Table", "label": "Cost Drivers", "options": "Template Cost Driver Line",
+   "description": "This is the reusable list, like a BOM's material list - editable here (changes future estimates using this template), and editable per-estimate when applied (changes just that one job, same as editing a Work Order's material list doesn't touch the master BOM)."}
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Product Estimation Template",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Sales Manager", "share": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

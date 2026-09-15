@@ -1,0 +1,79 @@
+{
+ "app": "bot_print_suite",
+ "charts": [
+  {
+   "chart_name": "Monthly Sales",
+   "label": "Monthly Sales"
+  },
+  {
+   "chart_name": "Enquiry Source Breakdown",
+   "label": "Enquiry Source Breakdown"
+  }
+ ],
+ "content": "[{\"id\": \"header1\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Print Suite</b></span>\", \"col\": 12}}, {\"id\": \"card1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Open Enquiries\", \"col\": 4}}, {\"id\": \"card2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Estimates Pending\", \"col\": 4}}, {\"id\": \"card3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Quotes Awaiting Approval\", \"col\": 4}}, {\"id\": \"card4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Jobs in Production\", \"col\": 4}}, {\"id\": \"card5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Jobs Due This Week\", \"col\": 4}}, {\"id\": \"card6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Overdue Jobs\", \"col\": 4}}, {\"id\": \"chart1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Monthly Sales\", \"col\": 6}}, {\"id\": \"chart2\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Enquiry Source Breakdown\", \"col\": 6}}, {\"id\": \"shortcuts_header\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\", \"col\": 12}}, {\"id\": \"sc1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"New Enquiry\", \"col\": 3}}, {\"id\": \"sc2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"New Estimate\", \"col\": 3}}, {\"id\": \"sc3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Job Board\", \"col\": 3}}]",
+ "creation": "2026-07-26 12:43:42.086000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "printing",
+ "idx": 0,
+ "indicator_color": "blue",
+ "is_hidden": 0,
+ "label": "Print Suite",
+ "link_type": "DocType",
+ "links": [],
+ "modified": "2026-07-26 12:43:42.086000",
+ "modified_by": "Administrator",
+ "module": "BOT Print Suite",
+ "name": "Print Suite",
+ "number_cards": [
+  {
+   "number_card_name": "Open Enquiries"
+  },
+  {
+   "number_card_name": "Estimates Pending"
+  },
+  {
+   "number_card_name": "Quotes Awaiting Approval"
+  },
+  {
+   "number_card_name": "Jobs in Production"
+  },
+  {
+   "number_card_name": "Jobs Due This Week"
+  },
+  {
+   "number_card_name": "Overdue Jobs"
+  }
+ ],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 0.0,
+ "shortcuts": [
+  {
+   "doc_view": "New",
+   "label": "New Enquiry",
+   "link_to": "Print Enquiry",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "New",
+   "label": "New Estimate",
+   "link_to": "Print Estimate",
+   "type": "DocType"
+  },
+  {
+   "doc_view": "",
+   "label": "Job Board",
+   "link_to": "Sales Order",
+   "type": "DocType"
+  }
+ ],
+ "title": "Print Suite",
+ "type": "Workspace"
+}

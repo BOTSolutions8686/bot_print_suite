@@ -1,0 +1,40 @@
+[
+ {
+  "colour_heads": 4,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Press Profile",
+  "gripper_margin_mm": 10.0,
+  "machine_model": "Heidelberg Speedmaster 74",
+  "makeready_cost": 500.0,
+  "makeready_sheets": 50,
+  "max_sheet_height_cm": 52.0,
+  "max_sheet_height_mm": 520.0,
+  "max_sheet_width_cm": 74.0,
+  "max_sheet_width_mm": 740.0,
+  "modified": "2026-08-05 18:55:02.865448",
+  "name": "Heidelberg SM74",
+  "press_name": "Heidelberg SM74",
+  "run_waste_pct": 2.0,
+  "running_rate_per_1000": 250.0
+ },
+ {
+  "colour_heads": 4,
+  "disabled": 0,
+  "docstatus": 0,
+  "doctype": "Press Profile",
+  "gripper_margin_mm": 10.0,
+  "machine_model": "Matches Mofeed's real math",
+  "makeready_cost": 0.0,
+  "makeready_sheets": 0,
+  "max_sheet_height_cm": 100.0,
+  "max_sheet_height_mm": 1000.0,
+  "max_sheet_width_cm": 70.0,
+  "max_sheet_width_mm": 700.0,
+  "modified": "2026-09-15 14:27:05.531743",
+  "name": "Golden Arrow Offset",
+  "press_name": "Golden Arrow Offset",
+  "run_waste_pct": 10.0,
+  "running_rate_per_1000": 0.0
+ }
+]

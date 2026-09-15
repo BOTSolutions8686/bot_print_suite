@@ -1,0 +1,199 @@
+// Collapses every field's help text behind a small (i) icon next to its
+// label, instead of always-visible text under every field - hover or
+// click the icon to see it. Uses __() so the tooltip text itself
+// respects the user's own language (Arabic users see the Arabic
+// translation, if one exists for that description).
+function make_toggle_icon(translated_desc, $target_to_toggle) {
+	const is_rtl = frappe.utils.is_rtl();
+	const $icon = $('<span class="description-toggle-icon">\u24d8</span>').attr({
+		title: translated_desc,
+	}).css({
+		cursor: 'pointer', color: '#8d99a6', fontSize: '12px',
+		[is_rtl ? 'marginRight' : 'marginLeft']: '5px',
+	});
+	$icon.on('click', function(e) {
+		e.stopPropagation();
+		$target_to_toggle.toggle();
+	});
+	return $icon;
+}
+
+function add_description_tooltips(frm) {
+	// Regular fields (including checkboxes - their label has no
+	// '.control-label' class, unlike every other fieldtype, so that
+	// selector needs a fallback to a plain <label>).
+	Object.values(frm.fields_dict).forEach(field => {
+		if (!field.df.description || !field.$wrapper) return;
+		const $wrapper = field.$wrapper;
+		const $help = $wrapper.find('.help-box').first();
+		let $label = $wrapper.find('label.control-label').first();
+		if (!$label.length) $label = $wrapper.find('label').first();
+		if (!$help.length || !$label.length) return;
+		if ($label.find('.description-toggle-icon').length) return;  // already added
+
+		$help.hide();
+		$label.append(make_toggle_icon(__(field.df.description), $help));
+	});
+
+	// Section-level descriptions (Section Break fields aren't in
+	// fields_dict at all - they render as plain DOM, found separately).
+	frm.$wrapper.find('.form-section-description').each(function() {
+		const $desc = $(this);
+		const $head = $desc.closest('.form-section').find('.section-head').first();
+		if (!$head.length) return;
+		if ($head.find('.description-toggle-icon').length) return;  // already added
+
+		const original_text = $desc.text().trim();
+		$desc.hide();
+		$head.append(make_toggle_icon(__(original_text), $desc));
+	});
+}
+
+// Makes Sell Price visually dominate the page - it's the one number
+// that matters most, and "bold" alone (Frappe's default for this
+// field) doesn't make it stand out from any other bold text.
+function emphasize_sell_price(frm) {
+	const field = frm.fields_dict['sell_price'];
+	if (!field || !field.$wrapper) return;
+	const $value = field.$wrapper.find('.control-value, input.input-with-feedback').first();
+	if (!$value.length) return;
+	$value.css({ fontSize: '28px', fontWeight: '700', color: '#1B2A4A' });
+}
+
+// Makes an overridden cost-driver row visually obvious at a glance in
+// the grid, instead of making someone read the Source column on every
+// row to notice a manual override is in play. Runs on form refresh
+// (covers opening a saved doc) and on the child table's own row-level
+// trigger (covers ticking the checkbox live, before the next save).
+function highlight_overridden_rows(frm) {
+	const grid_field = frm.fields_dict.applied_cost_drivers;
+	if (!grid_field || !grid_field.grid) return;
+	(grid_field.grid.grid_rows || []).forEach(row => {
+		if (!row.row) return;  // not rendered yet (e.g. collapsed grid)
+		row.row.toggleClass('cost-driver-overridden', !!row.doc.cost_override_enabled);
+	});
+}
+
+// Same idea as highlight_overridden_rows, but for the Ups field - a
+// top-level field, not a grid row, so it needs its own light styling
+// rather than reusing the grid-row CSS class.
+function highlight_ups_override(frm) {
+	const field = frm.fields_dict['ups'];
+	if (!field || !field.$wrapper) return;
+	const $value = field.$wrapper.find('.control-value, input.input-with-feedback').first();
+	if (!$value.length) return;
+	$value.css(frm.doc.ups_override_enabled
+		? { backgroundColor: '#FFF7E0' }
+		: { backgroundColor: '' });
+}
+
+// Injected once per page load - Frappe has no clean "add doctype CSS"
+// hook for child table rows, so this is the standard escape hatch.
+if (!document.getElementById('cost-driver-override-style')) {
+	$('<style id="cost-driver-override-style">')
+		.text('.cost-driver-overridden { background-color: #FFF7E0 !important; } ' +
+			'.cost-driver-overridden .form-control:disabled { background-color: transparent !important; }')
+		.appendTo('head');
+}
+
+frappe.ui.form.on('Print Estimate', {
+	refresh: function(frm) {
+		add_description_tooltips(frm);
+		emphasize_sell_price(frm);
+		highlight_overridden_rows(frm);
+		highlight_ups_override(frm);
+
+		// Small summary banner so a reviewer doesn't have to scroll the
+		// whole cost table to notice something was manually adjusted.
+		const overridden = (frm.doc.applied_cost_drivers || []).filter(r => r.cost_override_enabled);
+		const notes = overridden.map(r => r.cost_driver);
+		if (frm.doc.ups_override_enabled) notes.push('Ups per Sheet');
+		if (notes.length && frm.dashboard && frm.dashboard.set_headline_alert) {
+			frm.dashboard.set_headline_alert(
+				`\u26A0\uFE0F ${notes.length} item${notes.length > 1 ? 's' : ''} manually overridden: ${frappe.utils.escape_html(notes.join(', '))}`,
+				'orange'
+			);
+		}
+
+		// The reconciliation table is stored as raw HTML in a hidden
+		// Long Text field (an HTML fieldtype alone has no database
+		// column - it can only show STATIC content baked into the
+		// doctype, not a per-document computed value). This injects
+		// the real, computed content into its own visible HTML field.
+		if (frm.doc.reconciliation_table_data && frm.fields_dict.reconciliation_table_display) {
+			const $container = frm.fields_dict.reconciliation_table_display.$wrapper;
+			$container.html(frm.doc.reconciliation_table_data);
+
+			// Formula icons in that table are plain server-rendered
+			// HTML (not real Frappe fields), so a native `title`
+			// attribute was the first attempt - but that's hover-only,
+			// which doesn't work on touch and isn't discoverable for
+			// someone not used to hovering. Delegated click handler
+			// instead: a clear, unmissable popup, works the same on
+			// mouse or touch. `.off().on()` avoids stacking a duplicate
+			// handler on every refresh.
+			$container.off('click', '.formula-icon').on('click', '.formula-icon', function() {
+				frappe.msgprint({
+					title: __($(this).data('item')),
+					message: `<div style="font-size:14px;">${$(this).data('formula')}</div>`,
+					indicator: 'blue',
+				});
+			});
+		}
+
+		// Apply Template button - for RE-applying or switching templates
+		// on an estimate that's already been saved once. The FIRST
+		// application happens automatically on save (see validate() in
+		// print_estimate.py) - no click needed for the common case of
+		// just picking a template on a new estimate.
+		if (frm.doc.product_template && !frm.is_new()) {
+			frm.add_custom_button('Apply Template', function() {
+				frm.call('apply_template').then(() => frm.reload_doc());
+			});
+		}
+
+		if (frm.is_new() || frm.is_dirty()) return;
+		if (!frm.doc.sell_price) return;  // not yet computed - nothing to quote
+
+		frm.add_custom_button('Create Quotation', function() {
+			let qty_options = [frm.doc.quantity];
+			(frm.doc.computed_breaks || []).forEach(r => qty_options.push(r.qty));
+
+			if (qty_options.length === 1) {
+				frm.call('create_quotation').then(r => {
+					if (r.message) frappe.set_route('Form', 'Quotation', r.message);
+				});
+			} else {
+				let d = new frappe.ui.Dialog({
+					title: 'Which quantity should this quotation be for?',
+					fields: [{
+						fieldname: 'qty', fieldtype: 'Select', label: 'Quantity',
+						options: qty_options.map(q => String(q)), reqd: 1,
+						default: String(frm.doc.quantity),
+					}],
+					primary_action_label: 'Create Quotation',
+					primary_action: (values) => {
+						d.hide();
+						frm.call('create_quotation', { qty: values.qty }).then(r => {
+							if (r.message) frappe.set_route('Form', 'Quotation', r.message);
+						});
+					},
+				});
+				d.show();
+			}
+		}).addClass('btn-primary');
+	},
+	ups_override_enabled: function(frm) {
+		highlight_ups_override(frm);
+	},
+});
+
+// Live row highlight the instant someone ticks the checkbox, without
+// waiting for a save - the checkbox change fires on the child doctype,
+// not the parent, so it needs its own handler even though the CSS
+// class and helper function are shared with the parent's refresh.
+frappe.ui.form.on('Print Estimate Cost Driver Line', {
+	cost_override_enabled: function(frm) {
+		highlight_overridden_rows(frm);
+	},
+});
