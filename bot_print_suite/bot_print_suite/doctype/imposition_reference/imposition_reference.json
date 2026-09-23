@@ -1,0 +1,36 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-08-19 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": ["sheet_size", "cb1", "finished_width_cm", "finished_height_cm",
+  "sb_result", "confirmed_ups", "source"],
+ "fields": [
+  {"fieldname": "sheet_size", "fieldtype": "Link", "label": "Sheet Size", "options": "Sheet Size", "reqd": 1, "in_list_view": 1,
+   "description": "The press sheet this combination was confirmed on."},
+  {"fieldname": "cb1", "fieldtype": "Column Break"},
+  {"fieldname": "finished_width_cm", "fieldtype": "Float", "label": "Finished Width (cm)", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "finished_height_cm", "fieldtype": "Float", "label": "Finished Height (cm)", "reqd": 1, "in_list_view": 1,
+   "description": "Matches either way round - a piece confirmed as 21x29.7 also matches a job entered as 29.7x21, same physical size."},
+  {"fieldname": "sb_result", "fieldtype": "Section Break", "label": "Confirmed Result"},
+  {"fieldname": "confirmed_ups", "fieldtype": "Int", "label": "Confirmed Ups per Sheet", "reqd": 1, "in_list_view": 1,
+   "description": "The REAL ups Mofeed (or whoever) actually confirmed for this exact sheet + finished-size combination - not a calculated or estimated figure."},
+  {"fieldname": "source", "fieldtype": "Small Text", "label": "Source",
+   "description": "Who confirmed this and when, plus any useful context - e.g. 'Mofeed, 2026-08-19, matches the published 8-up A4 imposition standard (SRA1 reference)'. This is what makes the entry trustworthy to reuse - an unsourced number here is worse than no entry at all."}
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "module": "BOT Print Suite",
+ "name": "Imposition Reference",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {"create": 1, "delete": 1, "email": 1, "export": 1, "print": 1, "read": 1, "report": 1, "role": "System Manager", "share": 1, "write": 1},
+  {"create": 1, "email": 1, "print": 1, "read": 1, "report": 1, "role": "Sales Manager", "share": 1, "write": 1}
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

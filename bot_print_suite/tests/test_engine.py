@@ -160,6 +160,90 @@ class TestFullEstimateIntegration(unittest.TestCase):
 		self.assertEqual(result["ups"], 8)
 		self.assertEqual(result["sheets_required"], 6250)
 
+	def test_confirmed_imposition_reference_beats_geometry(self):
+		# The real fix for the 9-vs-8 gap: a confirmed reference for this
+		# EXACT (sheet, finished-size) combination should be used instead
+		# of geometry, with no per-job override needed. Same job as the
+		# override test above, but via the general, reusable mechanism.
+		references = [(700, 1000, 210, 297, 8, "Mofeed, 2026-08-19, matches published 8-up A4 standard")]
+		result = calc_estimate(
+			finished_w_mm=210, finished_h_mm=297, qty=50000,
+			colours_front=4, colours_back=0, printing_method="Sheetwise",
+			sheet_w_mm=700, sheet_h_mm=1000, gripper_margin_mm=10,
+			bleed_mm=0, gutter_mm=0,
+			makeready_sheets=0, run_waste_pct=0,
+			makeready_cost=0, running_rate_per_1000=0,
+			paper_rate_per_tonne=6000, gsm=150, plate_rate=37.5,
+			coverage_factor=0.35, ink_rate_per_sqm=0,
+			finishing_lines=[],
+			die_cost=0, freight_cost=0, margin_pct=0,
+			confirmed_ups_references=references,
+		)
+		self.assertEqual(result["ups"], 8)
+		self.assertEqual(result["ups_source"], "confirmed")
+		self.assertEqual(result["sheets_required"], 6250)
+
+	def test_confirmed_imposition_reference_matches_rotated_orientation(self):
+		# A finished size given as 297x210 is the same physical piece as
+		# 210x297 - the reference must match either way round.
+		references = [(700, 1000, 210, 297, 8, "test")]
+		result = calc_estimate(
+			finished_w_mm=297, finished_h_mm=210, qty=50000,
+			colours_front=4, colours_back=0, printing_method="Sheetwise",
+			sheet_w_mm=700, sheet_h_mm=1000, gripper_margin_mm=10,
+			bleed_mm=0, gutter_mm=0,
+			makeready_sheets=0, run_waste_pct=0,
+			makeready_cost=0, running_rate_per_1000=0,
+			paper_rate_per_tonne=6000, gsm=150, plate_rate=37.5,
+			coverage_factor=0.35, ink_rate_per_sqm=0,
+			finishing_lines=[],
+			die_cost=0, freight_cost=0, margin_pct=0,
+			confirmed_ups_references=references,
+		)
+		self.assertEqual(result["ups"], 8)
+		self.assertEqual(result["ups_source"], "confirmed")
+
+	def test_no_confirmed_reference_falls_back_to_geometry(self):
+		# An unmatched sheet/size combination must NOT be affected by
+		# unrelated confirmed references - falls through to geometry,
+		# same as if no references existed at all.
+		references = [(700, 1000, 210, 297, 8, "test - unrelated size")]
+		result = calc_estimate(
+			finished_w_mm=100, finished_h_mm=150, qty=1000,
+			colours_front=4, colours_back=0, printing_method="Sheetwise",
+			sheet_w_mm=700, sheet_h_mm=1000, gripper_margin_mm=10,
+			bleed_mm=0, gutter_mm=0,
+			makeready_sheets=0, run_waste_pct=0,
+			makeready_cost=0, running_rate_per_1000=0,
+			paper_rate_per_tonne=6000, gsm=150, plate_rate=37.5,
+			coverage_factor=0.35, ink_rate_per_sqm=0,
+			finishing_lines=[],
+			die_cost=0, freight_cost=0, margin_pct=0,
+			confirmed_ups_references=references,
+		)
+		self.assertEqual(result["ups_source"], "geometry")
+
+	def test_explicit_override_beats_confirmed_reference(self):
+		# Priority order: a specific per-job override (a documented reason
+		# for THIS job) must win over a general confirmed reference, not
+		# the other way round.
+		references = [(700, 1000, 210, 297, 8, "test")]
+		result = calc_estimate(
+			finished_w_mm=210, finished_h_mm=297, qty=50000,
+			colours_front=4, colours_back=0, printing_method="Sheetwise",
+			sheet_w_mm=700, sheet_h_mm=1000, gripper_margin_mm=10,
+			bleed_mm=0, gutter_mm=0,
+			makeready_sheets=0, run_waste_pct=0,
+			makeready_cost=0, running_rate_per_1000=0,
+			paper_rate_per_tonne=6000, gsm=150, plate_rate=37.5,
+			coverage_factor=0.35, ink_rate_per_sqm=0,
+			finishing_lines=[],
+			die_cost=0, freight_cost=0, margin_pct=0,
+			ups_override=6, confirmed_ups_references=references,
+		)
+		self.assertEqual(result["ups"], 6)
+		self.assertEqual(result["ups_source"], "override")
+
 
 if __name__ == "__main__":
 	unittest.main()

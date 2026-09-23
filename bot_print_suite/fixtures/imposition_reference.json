@@ -1,0 +1,13 @@
+[
+ {
+  "confirmed_ups": 8,
+  "docstatus": 0,
+  "doctype": "Imposition Reference",
+  "finished_height_cm": 29.7,
+  "finished_width_cm": 21.0,
+  "modified": "2026-09-24 01:01:27.246172",
+  "name": "uh9jg3sv1g",
+  "sheet_size": "70x100",
+  "source": "Mofeed, 2026-08-19 (Talha's flyer job, PE-00046, 50,000 qty). Matches the published 8-up A4 imposition standard (e.g. SRA1 640x900mm -> 8-up A4, a named industry-standard scheme, not a one-off preference). Investigated whether pure geometry with realistic gripper/colour-bar/trim/gutter margins could explain this - it can't, without inventing implausible margin constants (upright 3x3=9 has ~70mm of width slack, far more than any realistic margin stack-up removes). Confirmed real is 8, via the rotated 2-column x 4-row layout - genuinely a printing convention, not a geometry gap."
+ }
+]

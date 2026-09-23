@@ -14,6 +14,42 @@ is the only function that touches a Frappe document/DB.
 import math
 
 
+def lookup_confirmed_ups(sheet_w_mm, sheet_h_mm, item_w_mm, item_h_mm, references):
+	"""Checks a list of REAL, CONFIRMED (sheet, finished-item) -> ups
+	results before falling back to pure geometry. This exists because
+	geometry alone doesn't always match real practice - confirmed real
+	example (Talha/Mofeed, 2026-08-19): a 21x29.7cm A4 flyer on a
+	70x100cm sheet computes 9-up by pure tiling, but Mofeed's real
+	number is 8-up, matching the well-known published "8-up A4"
+	imposition convention (e.g. SRA1 640x900mm -> 8-up A4, a named
+	industry-standard scheme, not a one-off preference) - tried every
+	realistic gripper/colour-bar/trim/gutter combination and NONE
+	naturally reject the tighter 9-up fit without inventing implausible
+	margin constants, so this genuinely isn't a geometry-modeling gap.
+
+	This is an EXACT match on real confirmed combinations, not a fuzzy
+	"sheet size class" heuristic - deliberately narrow, so an unmatched
+	combination correctly falls through to the geometric calculation
+	rather than guessing whether some other size counts as "close
+	enough" to a confirmed one. `references` is a list of
+	(sheet_w_mm, sheet_h_mm, item_w_mm, item_h_mm, ups, source) tuples;
+	item dimensions match in either orientation, since a piece given as
+	210x297 is the same physical size as one given as 297x210. Returns
+	(ups, source) on a match, else None.
+	"""
+	def _close(a, b, tol_mm=0.5):
+		return abs(a - b) <= tol_mm
+
+	for ref_sw, ref_sh, ref_iw, ref_ih, ups, source in references:
+		if not (_close(sheet_w_mm, ref_sw) and _close(sheet_h_mm, ref_sh)):
+			continue
+		same_orientation = _close(item_w_mm, ref_iw) and _close(item_h_mm, ref_ih)
+		rotated = _close(item_w_mm, ref_ih) and _close(item_h_mm, ref_iw)
+		if same_orientation or rotated:
+			return ups, source
+	return None
+
+
 def ups_per_sheet(sheet_w_mm, sheet_h_mm, item_w_mm, item_h_mm, gripper_margin_mm):
 	"""Ups-per-sheet via simple imposition: divide the gripper-reduced sheet
 	by the (trim + bleed*2 + gutter) item size, floor to whole units, and
@@ -119,22 +155,33 @@ def calc_estimate(*, finished_w_mm, finished_h_mm, qty, colours_front, colours_b
 		makeready_sheets, run_waste_pct, makeready_cost, running_rate_per_1000,
 		paper_rate_per_tonne, gsm, plate_rate, coverage_factor, ink_rate_per_sqm,
 		finishing_lines, die_cost, freight_cost, margin_pct, direct_cost_per_sheet=None,
-		ups_override=None):
+		ups_override=None, confirmed_ups_references=None):
 	"""Pure orchestrator: plain values in, plain dict out. This is what the
 	golden tests call directly - no frappe.* dependency."""
 	item_w = finished_w_mm + (2 * bleed_mm) + gutter_mm
 	item_h = finished_h_mm + (2 * bleed_mm) + gutter_mm
 
-	# ups_override, confirmed real need (Talha, 2026-08-19): pure geometry
-	# - even corrected for a real gripper margin - doesn't always match a
-	# real printer's practical number (control-strip reservation, press
-	# quirks, operator judgement not captured by clean tiling math). Same
-	# override pattern as cost_override: an explicit escape hatch with a
-	# documented reason, not a formula pretending to be exact when it
-	# isn't. None means "no override" - 0 ups makes no physical sense, so
-	# there's no ambiguous-zero problem here the way Currency fields had.
-	ups = ups_override if ups_override is not None else ups_per_sheet(
-		sheet_w_mm, sheet_h_mm, item_w, item_h, gripper_margin_mm)
+	# Priority: an explicit per-job ups_override (a specific, documented
+	# reason for THIS job) beats a confirmed reference (a general, reusable
+	# real result), which beats raw geometry (the fallback for combinations
+	# nobody's confirmed yet). ups_override, confirmed real need (Talha,
+	# 2026-08-19): pure geometry - even corrected for a real gripper margin
+	# - doesn't always match a real printer's practical number (control-
+	# strip reservation, press quirks, operator judgement not captured by
+	# clean tiling math). None means "no override" - 0 ups makes no
+	# physical sense, so there's no ambiguous-zero problem here the way
+	# Currency fields had.
+	confirmed = lookup_confirmed_ups(sheet_w_mm, sheet_h_mm, item_w, item_h,
+		confirmed_ups_references or [])
+	ups_source = "geometry"
+	if ups_override is not None:
+		ups = ups_override
+		ups_source = "override"
+	elif confirmed is not None:
+		ups, _confirmed_source = confirmed
+		ups_source = "confirmed"
+	else:
+		ups = ups_per_sheet(sheet_w_mm, sheet_h_mm, item_w, item_h, gripper_margin_mm)
 
 	sheets_required, paper_cost = compute_sheets_and_paper(
 		qty, ups, makeready_sheets, run_waste_pct, sheet_w_mm, sheet_h_mm, gsm, paper_rate_per_tonne,
@@ -158,6 +205,7 @@ def calc_estimate(*, finished_w_mm, finished_h_mm, qty, colours_front, colours_b
 
 	return {
 		"ups": ups,
+		"ups_source": ups_source,
 		"sheets_required": sheets_required,
 		"plates_count": plates,
 		"paper_cost": round(paper_cost, 2),
@@ -194,6 +242,20 @@ def compute_estimate(doc):
 	press = frappe.get_cached_doc("Press Profile", doc.press)
 	settings = frappe.get_cached_doc("Print Suite Settings")
 	sheet = frappe.get_cached_doc("Sheet Size", doc.sheet_size)
+
+	# Confirmed imposition results, real (sheet, finished-size) -> ups
+	# combinations someone has actually verified, checked before falling
+	# back to raw geometry (see lookup_confirmed_ups). Only entries for
+	# THIS job's sheet are fetched - a small, cheap query, and it means a
+	# new Imposition Reference record takes effect on every future
+	# estimate using that sheet without any code change.
+	confirmed_ups_references = [
+		(sheet.width_mm, sheet.height_mm, r.finished_width_cm * 10, r.finished_height_cm * 10,
+			r.confirmed_ups, r.source)
+		for r in frappe.get_all("Imposition Reference",
+			filters={"sheet_size": doc.sheet_size},
+			fields=["finished_width_cm", "finished_height_cm", "confirmed_ups", "source"])
+	] if doc.sheet_size else []
 
 	coverage_factor = getattr(settings, _COVERAGE_SETTINGS_FIELD["Medium"])  # ink_coverage removed from the templated-only form - Ink Cost is unused/hidden for templated estimates anyway, this value never surfaces
 
@@ -248,6 +310,7 @@ def compute_estimate(doc):
 			margin_pct=float(doc.margin_pct or 0),
 			direct_cost_per_sheet=float(direct_cost_per_sheet) if direct_cost_per_sheet is not None else None,
 			ups_override=int(doc.ups_override) if doc.get("ups_override_enabled") else None,
+			confirmed_ups_references=confirmed_ups_references,
 		)
 
 	result = _run(doc.quantity)
@@ -266,6 +329,21 @@ def compute_estimate(doc):
 		doc.ups_formula = (
 			f"Manually entered: {doc.ups} ups per sheet (replaces the geometric calculation "
 			f"entirely).\nReason: {reason}"
+		)
+	elif result["ups_source"] == "confirmed":
+		item_w = doc.finished_width_cm * 10
+		item_h = doc.finished_height_cm * 10
+		matched_source = next(
+			(src for sw, sh, iw, ih, ups, src in confirmed_ups_references
+				if abs(sw - sheet.width_mm) <= 0.5 and abs(sh - sheet.height_mm) <= 0.5
+				and ((abs(iw - item_w) <= 0.5 and abs(ih - item_h) <= 0.5)
+					or (abs(iw - item_h) <= 0.5 and abs(ih - item_w) <= 0.5))),
+			"(source not found - check Imposition Reference records)")
+		doc.ups_formula = (
+			f"Matched a confirmed Imposition Reference: {doc.finished_width_cm:g}\u00d7"
+			f"{doc.finished_height_cm:g}cm on a {sheet.width_cm:g}\u00d7{sheet.height_cm:g}cm sheet "
+			f"= {doc.ups} ups per sheet, real and reusable (not derived from geometry for this job).\n\n"
+			f"Source: {matched_source}"
 		)
 	else:
 		gripper_cm = float(press.gripper_margin_mm or 0) / 10
@@ -288,10 +366,13 @@ def compute_estimate(doc):
 			f"Tried rotated ({item_h_cm:g}\u00d7{item_w_cm:g}cm piece): "
 			f"{cols_b} across \u00d7 {rows_b} down = {ups_b} ups.\n\n"
 			f"Better fit is {winner}: {doc.ups} ups per sheet.\n\n"
-			f"Note: pure geometry doesn't always match real practice (control-strip reservation, "
-			f"press quirks) - if Mofeed's real number differs, use the Ups Override below rather "
-			f"than treating this as wrong."
+			f"No confirmed Imposition Reference exists for this exact sheet/size combination yet, "
+			f"so this is raw geometry - it doesn't always match real practice (control-strip "
+			f"reservation, press quirks). If Mofeed's real number differs, either use the Ups "
+			f"Override below for just this job, or add an Imposition Reference record so every "
+			f"future job with this exact sheet/size gets it automatically."
 		)
+
 
 	if doc.get("sheets_required_override"):
 		doc.sheets_required_formula = (

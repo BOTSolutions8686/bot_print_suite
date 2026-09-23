@@ -279,6 +279,7 @@ fixtures = [
 	{"dt": "Cost Driver"},
 	{"dt": "Product Estimation Template"},
 	{"dt": "Paper Type"},
+	{"dt": "Imposition Reference"},
 	{"dt": "Translation", "filters": [["language", "=", "ar"]]},
 	"Sheet Size",
 	"Press Profile",
