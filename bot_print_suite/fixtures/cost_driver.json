@@ -222,9 +222,9 @@
   "fixed_setup_cost": 0.0,
   "is_tiered": 0,
   "measurement_basis": "Per Carton",
-  "modified": "2026-08-19 20:06:00.061020",
+  "modified": "2026-09-24 01:10:05.102152",
   "name": "Packing",
-  "notes": "SUPERSEDED 2026-08-19 (Talha, live with Mofeed): real packing formula, not a flat guess. Cartons = (Sheets Required x Sheet Size's A4-Equivalent Count x GSM / 100) / Print Suite Settings' Sheets per Carton. Cost = cartons x this driver's Rate (1.4 SAR/carton). Verified exactly against his real worked example: 125,000 sheets, 70x100 sheet (8 A4-equivalents), 300gsm, 3000 sheets/carton -> 1,000 cartons x 1.4 = 1,400 SAR, matching his real number exactly.\n\nPREVIOUS (kept for reference): Flat 50 SAR, confirmed. Was mislabelled 'Rolling' in an earlier misread of Mofeed's handwriting - corrected directly by Talha.",
+  "notes": "CONFIRMED PERMANENT DESIGN (Talha, 2026-08-19): Mofeed picks the box size by eye per job - no fixed rule, not weight-only, not a lookup table. This is NOT a temporary gap to close later; a formula would be actively wrong here. Manual override (with a documented reason per job) is the correct, final approach for Packing, same as any job where the real process is human judgement rather than a calculation.\n\nPREVIOUS: SUPERSEDED 2026-08-19 (Talha, live with Mofeed): real packing formula, not a flat guess. Cartons = (Sheets Required x Sheet Size's A4-Equivalent Count x GSM / 100) / Print Suite Settings' Sheets per Carton. Cost = cartons x this driver's Rate (1.4 SAR/carton). Verified exactly against his real worked example: 125,000 sheets, 70x100 sheet (8 A4-equivalents), 300gsm, 3000 sheets/carton -> 1,000 cartons x 1.4 = 1,400 SAR, matching his real number exactly.\n\nPREVIOUS (kept for reference): Flat 50 SAR, confirmed. Was mislabelled 'Rolling' in an earlier misread of Mofeed's handwriting - corrected directly by Talha.",
   "rate": 1.4,
   "tiers": []
  },

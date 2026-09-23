@@ -28,6 +28,18 @@ _DIE_LIKE_KEYWORDS = ("die", "frame", "قالب")
 # name still gets caught without an exact-name dependency.
 _CUTTING_LIKE_KEYWORDS = ("cutting",)
 
+# Real gap found and fixed (Talha, 2026-08-19): the tiered "Per 1000
+# Sheets" Printing driver was blind to single vs double-sided printing -
+# a sheet printed on both sides needs two passes through the press, so
+# the effective sheet-equivalent volume doubles. This is genuinely
+# independent of Colours Back (a job can reuse the same 4 plates on
+# both sides via Work and Turn while still needing double the press
+# time), so it's driven by doc.double_sided, not colours. Doubling
+# happens BEFORE the tier lookup, not just on the final cost - since
+# it's a declining-rate table, doubled volume can land in a cheaper
+# tier bracket entirely, not just double the same rate.
+_PRINTING_LIKE_KEYWORDS = ("printing",)
+
 
 def apply_template(doc):
 	"""Populates applied_cost_drivers from doc.product_template's driver
@@ -95,6 +107,7 @@ def compute_driver_costs(doc):
 		driver = frappe.get_cached_doc("Cost Driver", row.cost_driver)
 		is_die_like = any(k in driver.name.lower() for k in _DIE_LIKE_KEYWORDS)
 		is_cutting_like = any(k in driver.name.lower() for k in _CUTTING_LIKE_KEYWORDS)
+		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
 
 		# Die-reuse rule, confirmed directly by Golden Arrow's estimator:
 		# repeat customers don't pay for the die again on a reorder.
@@ -143,6 +156,16 @@ def compute_driver_costs(doc):
 				row_job_values["area_cm2"] = (sheet.width_cm or 0) * (sheet.height_cm or 0)
 			else:
 				row_job_values["area_cm2"] = row_job_values["area_cm2"] * (doc.ups or 1)
+		if is_printing_like and doc.get("double_sided"):
+			# Confirmed real gap (Talha, 2026-08-19): a sheet printed on
+			# both sides needs two passes through the press, doubling
+			# the effective sheet-equivalent volume BEFORE the tier
+			# lookup - not just doubling the final cost - since it's a
+			# declining-rate table, doubled volume can land in a
+			# cheaper tier bracket entirely. Independent of Colours
+			# Back (a job can reuse one plate set on both sides via
+			# Work and Turn and still need double the press time).
+			row_job_values["sheets_required"] = row_job_values["sheets_required"] * 2
 
 		tiers = [(t.qty_from, t.qty_to, t.rate) for t in driver.tiers] if driver.is_tiered else None
 		cost = compute_cost_driver(
@@ -186,8 +209,12 @@ def _rate_description(driver, doc, row):
 
 	if driver.is_tiered:
 		basis_qty = doc.sheets_required if basis == "Per 1000 Sheets" else doc.quantity
+		basis_qty = basis_qty or 0
+		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
+		if is_printing_like and basis == "Per 1000 Sheets" and doc.get("double_sided"):
+			basis_qty = basis_qty * 2
 		tiers = [(t.qty_from, t.qty_to, t.rate) for t in driver.tiers]
-		rate = _tier_rate_used(tiers, basis_qty or 0)
+		rate = _tier_rate_used(tiers, basis_qty)
 		fixed_part = f"{fixed:g} fixed + " if fixed else ""
 		return f"{fixed_part}{rate:g} SAR/1000 (tier)"
 
@@ -229,6 +256,10 @@ def _quantity_description(driver, doc):
 	if basis == "Per Side":
 		return f"{doc.glue_sides or 0:g} sides"
 	if basis in ("Per 1000 Sheets", "Per Sheet", "Per Sheet (Declining Rate)"):
+		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
+		if is_printing_like and doc.get("double_sided"):
+			doubled = (doc.sheets_required or 0) * 2
+			return f"{doc.sheets_required or 0:,} sheets \u00d7 2 (double-sided) = {doubled:,} sheet-sides"
 		return f"{doc.sheets_required or 0:,} sheets"
 	if basis == "Per Carton":
 		from bot_print_suite.estimation.cost_driver_engine import compute_cartons
@@ -318,6 +349,11 @@ def _formula_description(driver, doc, row, computed_cost):
 		if basis == "Per Sheet":
 			return f"{driver.rate:g} SAR/sheet \u00d7 {qty:,} sheets = {computed_cost:,.2f} SAR"
 		is_cutting_like = any(k in driver.name.lower() for k in _CUTTING_LIKE_KEYWORDS)
+		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
+		double_sided_note = ""
+		if is_printing_like and basis == "Per 1000 Sheets" and doc.get("double_sided"):
+			double_sided_note = f" ({doc.sheets_required or 0:,} sheets \u00d7 2, double-sided)"
+			qty = qty * 2
 		ups = doc.ups or 1
 		if driver.is_tiered:
 			tiers = [(t.qty_from, t.qty_to, t.rate) for t in driver.tiers]
@@ -330,9 +366,9 @@ def _formula_description(driver, doc, row, computed_cost):
 				return (f"({fixed_part}{qty:,} {unit} \u00f7 1000 \u00d7 {rate:g}) \u00f7 {ups} ups "
 					f"= {raw:,.2f} \u00f7 {ups} = {computed_cost:,.2f} SAR")
 			if fixed:
-				return (f"{fixed:g} fixed + ({qty:,} {unit} \u00f7 1000 \u00d7 {rate:g}) "
+				return (f"{fixed:g} fixed + ({qty:,} {unit}{double_sided_note} \u00f7 1000 \u00d7 {rate:g}) "
 					f"= {fixed:g} + {variable_part:,.2f} = {computed_cost:,.2f} SAR")
-			return f"{qty:,} {unit} \u00f7 1000 \u00d7 {rate:g} = {computed_cost:,.2f} SAR"
+			return f"{qty:,} {unit}{double_sided_note} \u00f7 1000 \u00d7 {rate:g} = {computed_cost:,.2f} SAR"
 		unit = "sheets" if basis == "Per 1000 Sheets" else "pieces"
 		rate = driver.rate or 0
 		variable_part = (qty / 1000) * rate

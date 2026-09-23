@@ -143,6 +143,32 @@ class TestIndividualDrivers(unittest.TestCase):
 			is_tiered=True, tiers=tiers, **job)
 		self.assertAlmostEqual(cost, 12500.0, places=2)
 
+	def test_printing_double_sided_can_shift_tier_bracket(self):
+		# Real gap found and fixed (Talha, 2026-08-19): a double-sided
+		# job needs the sheet run through the press twice, so the
+		# binding layer doubles sheets_required BEFORE this function
+		# ever sees it - this test checks the math that matters once
+		# that's done, not the doubling decision itself (that's
+		# binding-layer logic, not pure-engine). 6,250 sheets alone
+		# falls in the 5,001-10,000 tier (125/1000) = 781.25. Doubled
+		# to 12,500 (the real double-sided volume) shifts into the
+		# 10,001-50,000 tier (90/1000) - NOT just double the same rate,
+		# since it's a declining-rate table: (12500/1000)*90 = 1,125.00,
+		# not 781.25*2 = 1,562.50.
+		tiers = [(0, 1000, 450), (1001, 3000, 200), (3001, 5000, 180),
+			(5001, 10000, 125), (10001, 50000, 90), (50001, 100000, 80),
+			(100001, 999999999, 75)]
+		job = dict(JOB, sheets_required=6250)
+		single_sided = compute_cost_driver(measurement_basis="Per 1000 Sheets",
+			is_tiered=True, tiers=tiers, **job)
+		self.assertAlmostEqual(single_sided, 781.25, places=2)
+
+		doubled_job = dict(JOB, sheets_required=12500)
+		double_sided = compute_cost_driver(measurement_basis="Per 1000 Sheets",
+			is_tiered=True, tiers=tiers, **doubled_job)
+		self.assertAlmostEqual(double_sided, 1125.00, places=2)
+		self.assertNotAlmostEqual(double_sided, single_sided * 2, places=2)
+
 
 class TestFullJobReconciliation(unittest.TestCase):
 	def test_reproduces_mofeeds_real_subtotal(self):
