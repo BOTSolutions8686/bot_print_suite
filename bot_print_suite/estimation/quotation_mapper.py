@@ -45,8 +45,39 @@ def make_quotation(estimate_name, qty=None):
 		"item_code": _get_or_create_placeholder_item(est),
 		"qty": qty,
 		"rate": per_unit_rate,
+		"description": _customer_description(est, qty),
 	})
 	return quotation
+
+
+def _customer_description(est, qty):
+	"""A customer-readable specification, without exposing internal cost
+	drivers, margins, press choices, or production calculations."""
+	enquiry = None
+	if est.enquiry:
+		enquiry = frappe.db.get_value(
+			"Print Enquiry", est.enquiry,
+			["paper_preference", "finishing_requirements", "required_by"],
+			as_dict=True,
+		)
+	lines = [f"<b>{est.product_template or est.product_type or 'Print Job'}</b>"]
+	if est.finished_width_cm and est.finished_height_cm:
+		lines.append(f"Finished size: {est.finished_width_cm:g} × {est.finished_height_cm:g} cm")
+	lines.append(f"Quantity: {int(qty):,}")
+	if est.colours_front or est.colours_back:
+		colour_text = f"{int(est.colours_front or 0)} colour(s) front"
+		if est.double_sided or est.colours_back:
+			colour_text += f", {int(est.colours_back or 0)} colour(s) back"
+		lines.append(colour_text)
+	if est.paper_type:
+		lines.append(f"Material: {est.paper_type}")
+	elif enquiry and enquiry.paper_preference:
+		lines.append(f"Requested material: {enquiry.paper_preference}")
+	if enquiry and enquiry.finishing_requirements:
+		lines.append(f"Finishing: {enquiry.finishing_requirements}")
+	if enquiry and enquiry.required_by:
+		lines.append(f"Requested delivery: {frappe.utils.formatdate(enquiry.required_by)}")
+	return "<br>".join(lines)
 
 
 def _get_or_create_placeholder_item(est):

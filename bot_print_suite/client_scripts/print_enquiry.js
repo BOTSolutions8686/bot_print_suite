@@ -4,8 +4,8 @@ frappe.ui.form.on('Print Enquiry', {
 
 		if (!frm.doc.linked_estimate) {
 			frm.add_custom_button('Convert to Estimate', function() {
-				if (!frm.doc.customer) {
-					frappe.msgprint('Link an existing Customer before converting to an estimate.');
+				if (!frm.doc.customer && !frm.doc.customer_name_new) {
+					frappe.msgprint('Link an existing Customer or enter the new company name before converting.');
 					return;
 				}
 				frm.call('make_print_estimate').then(r => {
