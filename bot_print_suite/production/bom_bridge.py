@@ -6,12 +6,9 @@ ERPNext BOM. Deliberately a MAPPING function, not new calculation logic -
 every quantity here was already computed by estimation/engine.py and is
 just being read off the Print Estimate document.
 
-Scope note: creating a per-job finished-good Item is pulled forward from
-step 7 (4d) because a per-job BOM structurally needs a per-job Item (the
-Quotation-stage placeholder item from quotation_mapper.py is shared across
-all jobs of the same product type, which is fine for pricing but wrong for
-a specific job's BOM). Only that one piece is pulled forward - routing
-derivation, the Start Production button, and backflush config remain 4d.
+The job-specific finished-good Item is assigned to the Quotation before it
+is submitted. ERPNext's native mapper then carries it into the Sales Order,
+so this bridge never mutates submitted commercial documents.
 """
 
 import frappe
@@ -77,20 +74,6 @@ def _get_or_create_plate_item():
 	return _PLATE_ITEM_CODE
 
 
-def _get_or_create_job_item(sales_order_name, est):
-	"""Per-job finished-good Item - pulled forward from 4d for the reason
-	documented at module level. Code is job-specific, not shared."""
-	code = f"JOB-{sales_order_name}"
-	if not frappe.db.exists("Item", code):
-		frappe.get_doc({
-			"doctype": "Item", "item_code": code,
-			"item_name": f"{est.product_type} - {sales_order_name}",
-			"item_group": _ensure_item_group("Finished Job"),
-			"stock_uom": "Nos", "is_stock_item": 1,
-		}).insert(ignore_permissions=True)
-	return code
-
-
 def _derive_operations(est):
 	"""Routing derived from the estimate (PLAN.md 4d): press selection ->
 	press operation, finishing checkboxes -> finishing operations in
@@ -116,21 +99,18 @@ def create_job_bom(sales_order_name):
 	est = frappe.get_doc("Print Estimate", est_name)
 	so = frappe.get_doc("Sales Order", sales_order_name)
 
-	production_item = _get_or_create_job_item(sales_order_name, est)
+	production_item = frappe.db.get_value(
+		"Sales Order Item", {"parent": sales_order_name}, "item_code"
+	)
+	if not production_item:
+		frappe.throw(f"No production Item found on {sales_order_name}.")
+	if not frappe.db.get_value("Item", production_item, "is_stock_item"):
+		frappe.throw(
+			f"Item {production_item} on {sales_order_name} is not a stock Item. "
+			"Submit its source Quotation again after installing the latest BOT Print Suite update."
+		)
 	paper_item = _get_or_create_paper_item(est)
 	plate_item = _get_or_create_plate_item()
-
-	# The Sales Order carries the generic quotation-stage placeholder item
-	# (correct for pricing across many jobs of the same product type - see
-	# quotation_mapper.py). Now that this job has its own BOM, it needs
-	# its own Item, and ERPNext's Work Order requires production_item to
-	# match a line on the Sales Order - so swap it here, the moment a job
-	# stops being "any folding carton" and becomes *this* job. Direct
-	# db.set_value on a submitted document's child row is deliberate: this
-	# is a controlled system correction, not a user edit.
-	so_item_name = frappe.db.get_value("Sales Order Item", {"parent": sales_order_name}, "name")
-	frappe.db.set_value("Sales Order Item", so_item_name, "item_code", production_item)
-	frappe.db.set_value("Sales Order Item", so_item_name, "item_name", production_item)
 
 	bom = frappe.new_doc("BOM")
 	bom.item = production_item

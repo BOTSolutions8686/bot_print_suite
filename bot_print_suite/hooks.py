@@ -148,6 +148,7 @@ required_apps = ["erpnext"]
 
 doc_events = {
 	"Quotation": {
+		"before_submit": "bot_print_suite.utils.assign_job_item_to_quotation",
 		"on_update": "bot_print_suite.utils.sync_enquiry_status_from_quotation",
 	},
 	"Work Order": {

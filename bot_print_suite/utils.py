@@ -1,5 +1,44 @@
 import frappe
 
+
+def assign_job_item_to_quotation(doc, method=None):
+	"""Give an app-generated Quotation its permanent finished-good Item
+	before ERPNext maps it into a Sales Order.
+
+	The Quotation remains customer-friendly while it is a draft, using the
+	generic service placeholder. On submission its unique stock Item is set
+	on the still-editable Quotation rows, so the native Quotation -> Sales
+	Order mapper carries the correct production Item forward without any
+	after-submit database edits.
+	"""
+	if not doc.get("custom_print_estimate"):
+		return
+
+	est = frappe.get_doc("Print Estimate", doc.custom_print_estimate)
+	item_code = _get_or_create_quotation_job_item(doc.name, est)
+	for row in doc.items:
+		if (row.item_code or "").startswith("PRINT-JOB-"):
+			row.item_code = item_code
+			row.item_name = frappe.db.get_value("Item", item_code, "item_name")
+
+
+def _get_or_create_quotation_job_item(quotation_name, est):
+	code = f"JOB-{quotation_name}"
+	if frappe.db.exists("Item", code):
+		return code
+
+	from bot_print_suite.production.bom_bridge import _ensure_item_group
+
+	frappe.get_doc({
+		"doctype": "Item",
+		"item_code": code,
+		"item_name": f"{est.product_type} - {quotation_name}",
+		"item_group": _ensure_item_group("Finished Job"),
+		"stock_uom": "Nos",
+		"is_stock_item": 1,
+	}).insert(ignore_permissions=True)
+	return code
+
 _QUOTATION_STATUS_TO_ENQUIRY_STATUS = {
 	"Ordered": "Won",
 	"Lost": "Lost",

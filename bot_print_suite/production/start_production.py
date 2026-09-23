@@ -24,7 +24,10 @@ def start_production(sales_order_name):
 	_require_permission("Work Order", "submit")
 	_require_permission("Stock Entry", "create")
 
-	bom_name = frappe.db.get_value("BOM", {"item": f"JOB-{sales_order_name}", "docstatus": 1})
+	production_item = frappe.db.get_value(
+		"Sales Order Item", {"parent": sales_order_name}, "item_code"
+	)
+	bom_name = frappe.db.get_value("BOM", {"item": production_item, "docstatus": 1})
 	if not bom_name:
 		bom_name = create_job_bom(sales_order_name)
 
