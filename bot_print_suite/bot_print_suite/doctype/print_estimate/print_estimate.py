@@ -3,7 +3,8 @@ from frappe.model.document import Document
 from bot_print_suite.estimation.engine import compute_estimate
 from bot_print_suite.estimation.quotation_mapper import make_quotation
 from bot_print_suite.estimation.cost_driver_binding import (
-	apply_template as _apply_template, compute_driver_costs, build_reconciliation_table)
+	apply_template as _apply_template, compute_driver_costs, build_reconciliation_table,
+	enforce_template_requirements)
 
 
 class PrintEstimate(Document):
@@ -52,6 +53,7 @@ class PrintEstimate(Document):
 
 			compute_estimate(self)
 			compute_driver_costs(self)
+			enforce_template_requirements(self)
 
 			self.subtotal = round(
 				float(self.paper_cost or 0) + float(self.driver_costs_total or 0)

@@ -4,13 +4,15 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": ["cost_driver", "required", "default_enabled"],
+ "field_order": ["cost_driver", "required", "default_enabled", "needs_manual_confirmation"],
  "fields": [
   {"fieldname": "cost_driver", "fieldtype": "Link", "label": "Cost Driver", "options": "Cost Driver", "reqd": 1, "in_list_view": 1},
   {"fieldname": "required", "fieldtype": "Check", "label": "Required", "default": "1", "in_list_view": 1,
-   "description": "If checked, this cost always applies for this product type (e.g. Die is required on Folding Carton). If unchecked, it shows as an optional add-on the estimator can turn on for this specific job (e.g. Die is optional on a standard-shape Business Card, only needed for custom shapes)."},
+   "description": "If checked, this cost always applies for this product type (e.g. Die is required on Folding Carton). If unchecked, it shows as an optional add-on the estimator can turn on for this specific job (e.g. Die is optional on a standard-shape Business Card, only needed for custom shapes). ENFORCED as of 2026-08-19: an estimate can't be saved with a Required row turned off."},
   {"fieldname": "default_enabled", "fieldtype": "Check", "label": "On by Default", "default": "1", "in_list_view": 1,
-   "description": "Whether this line starts checked-on when the template is applied to a new estimate. Optional lines can still default to on or off depending on how common they are for this product type."}
+   "description": "Whether this line starts checked-on when the template is applied to a new estimate. Optional lines can still default to on or off depending on how common they are for this product type."},
+  {"fieldname": "needs_manual_confirmation", "fieldtype": "Check", "label": "Needs Manual Confirmation", "in_list_view": 1,
+   "description": "Confirmed real need (Talha, 2026-08-19): tick this when the formula genuinely can't be trusted to give the right answer for this product, and a human MUST review and enter the real figure before the estimate can be saved - not just 'can be overridden if someone remembers to'. Real case: Packing on Flyer - Mofeed picks the box size by eye, no fixed rule, so the formula's guess is often wrong and must never be silently accepted. Does NOT apply to Packing on Folding Carton, where the same formula genuinely works - this is set per template, not per Cost Driver, precisely so one product's exception doesn't force extra clicks on another product where the formula is trustworthy."}
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,

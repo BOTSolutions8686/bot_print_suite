@@ -189,6 +189,41 @@ def compute_driver_costs(doc):
 	doc.driver_costs_total = round(total, 2)
 
 
+def enforce_template_requirements(doc):
+	"""Confirmed real need (Talha, 2026-08-19): make sure a required
+	cost can't be silently switched off, and a cost the formula can't
+	be trusted for (Packing on Flyer - Mofeed picks the box by eye, no
+	fixed rule) can't be saved without a human actually reviewing and
+	entering the real number. Called from validate(), so this genuinely
+	blocks the save - not just a warning someone can dismiss and
+	forget. Reads the template's per-line flags fresh each time rather
+	than trusting anything cached on the row, since the template is the
+	one source of truth for what THIS product type actually needs."""
+	if not doc.product_template:
+		return
+	template_lines = {
+		line.cost_driver: line
+		for line in frappe.get_all("Template Cost Driver Line",
+			filters={"parent": doc.product_template},
+			fields=["cost_driver", "required", "needs_manual_confirmation"])
+	}
+	for row in doc.applied_cost_drivers:
+		line = template_lines.get(row.cost_driver)
+		if not line:
+			continue
+		if line.required and not row.enabled:
+			frappe.throw(
+				f"{row.cost_driver} is required for {doc.product_template} jobs and can't be "
+				f"turned off for this estimate."
+			)
+		if line.needs_manual_confirmation and row.enabled and not row.cost_override_enabled:
+			frappe.throw(
+				f"{row.cost_driver} needs a manually confirmed number for {doc.product_template} "
+				f"jobs - the formula alone isn't reliable enough here. Tick 'Override This Cost' "
+				f"on the {row.cost_driver} row and enter the real figure before saving."
+			)
+
+
 def _tier_rate_used(tiers, qty):
 	for qty_from, qty_to, rate in tiers:
 		if qty_from <= qty <= qty_to:

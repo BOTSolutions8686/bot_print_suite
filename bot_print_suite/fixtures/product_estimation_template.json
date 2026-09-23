@@ -6,50 +6,53 @@
    {
     "cost_driver": "Plate",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 1
    },
    {
     "cost_driver": "Printing",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 1
    },
    {
     "cost_driver": "Artwork",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Packing",
     "default_enabled": 1,
+    "needs_manual_confirmation": 1,
     "required": 0
    },
    {
     "cost_driver": "Cutting",
     "default_enabled": 0,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Lamination",
     "default_enabled": 0,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Die / Frame",
     "default_enabled": 0,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Glue - 1 Side",
     "default_enabled": 0,
-    "required": 0
-   },
-   {
-    "cost_driver": "Rolling",
-    "default_enabled": 0,
+    "needs_manual_confirmation": 0,
     "required": 0
    }
   ],
-  "modified": "2026-09-15 14:27:05.637592",
+  "modified": "2026-09-24 01:46:21.983438",
   "name": "Flyer",
   "notes": null,
   "product_type": "Flyer",
@@ -62,41 +65,49 @@
    {
     "cost_driver": "Plate",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 1
    },
    {
     "cost_driver": "Printing",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 1
    },
    {
     "cost_driver": "Die / Frame",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 1
    },
    {
     "cost_driver": "Cutting",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 1
    },
    {
     "cost_driver": "Glue - 1 Side",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Artwork",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Packing",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Lamination",
     "default_enabled": 0,
+    "needs_manual_confirmation": 0,
     "required": 0
    }
   ],
@@ -113,36 +124,43 @@
    {
     "cost_driver": "Plate",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 1
    },
    {
     "cost_driver": "Printing",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 1
    },
    {
     "cost_driver": "Cutting",
     "default_enabled": 1,
-    "required": 1
+    "needs_manual_confirmation": 0,
+    "required": 0
    },
    {
     "cost_driver": "Artwork",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Packing",
     "default_enabled": 1,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Die / Frame",
     "default_enabled": 0,
+    "needs_manual_confirmation": 0,
     "required": 0
    },
    {
     "cost_driver": "Glue - 1 Side",
     "default_enabled": 0,
+    "needs_manual_confirmation": 0,
     "required": 0
    }
   ],
