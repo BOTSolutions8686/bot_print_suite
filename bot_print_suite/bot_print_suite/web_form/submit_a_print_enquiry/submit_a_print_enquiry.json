@@ -8,7 +8,8 @@
  "anonymous": 0,
  "apply_document_permissions": 0,
  "button_label": "Save",
- "creation": "2026-09-24 02:24:27.036486",
+ "client_script": "frappe.web_form.after_load = function() {\n\t\tconst optional_section = frappe.web_form.fields_dict.sb_additional;\n\t\tif (!optional_section) return;\n\n\t\t// Web Form Field does not carry DocField's `collapsible` property,\n\t\t// even though both use the same Section renderer. Enable the native\n\t\t// accessible section behavior here and start it closed, so customers\n\t\t// see only the six essentials unless they ask for more.\n\t\toptional_section.df.collapsible = 1;\n\t\toptional_section.head.addClass(\"collapsible\").attr(\"tabindex\", 0);\n\t\toptional_section.indicator.show();\n\t\toptional_section.head.off(\"click.optional-details\").on(\"click.optional-details\", function() {\n\t\t\toptional_section.collapse();\n\t\t});\n\t\toptional_section.head.off(\"keydown.optional-details\").on(\"keydown.optional-details\", function(event) {\n\t\t\tif (event.key === \"Enter\" || event.key === \" \") {\n\t\t\t\tevent.preventDefault();\n\t\t\t\toptional_section.collapse();\n\t\t\t}\n\t\t});\n\t\toptional_section.collapse(true);\n};\n",
+ "creation": "2026-09-24 02:34:37.576993",
  "doc_type": "Print Enquiry",
  "docstatus": 0,
  "doctype": "Web Form",
@@ -19,7 +20,7 @@
  "list_columns": [],
  "login_required": 0,
  "max_attachment_size": 0,
- "modified": "2026-09-24 02:30:24.842422",
+ "modified": "2026-09-24 02:38:45.846359",
  "modified_by": "Administrator",
  "module": "BOT Print Suite",
  "name": "submit-a-print-enquiry",
@@ -34,31 +35,16 @@
  "web_form_fields": [
   {
    "allow_read_on_all_link_options": 0,
-   "description": "Already a Golden Arrow customer? Start typing your registered customer name. Otherwise use the company-name field below.",
-   "fieldname": "customer",
-   "fieldtype": "Link",
-   "hidden": 0,
-   "label": "Customer",
-   "max_length": 0,
-   "max_value": 0,
-   "options": "Customer",
-   "precision": "",
-   "read_only": 0,
-   "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "description": "Enter your company or organization name if it is not available in the Customer field above.",
+   "description": "Enter the company or organization requesting the quotation.",
    "fieldname": "customer_name_new",
    "fieldtype": "Data",
    "hidden": 0,
-   "label": "Company Name (if not yet a customer)",
+   "label": "Company Name",
    "max_length": 0,
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -86,7 +72,7 @@
    "max_value": 0,
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -101,7 +87,7 @@
    "options": "\nFolding Carton\nBusiness Card\nFlyer\nSticker\nOther",
    "precision": "",
    "read_only": 0,
-   "reqd": 0,
+   "reqd": 1,
    "show_in_filter": 0
   },
   {
@@ -111,6 +97,34 @@
    "fieldtype": "Int",
    "hidden": 0,
    "label": "How many do you need?",
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 1,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "description": "Briefly describe what you need, or tell us which details you would like Golden Arrow to recommend.",
+   "fieldname": "rough_spec",
+   "fieldtype": "Text",
+   "hidden": 0,
+   "label": "Tell us about your job",
+   "max_length": 0,
+   "max_value": 0,
+   "precision": "",
+   "read_only": 0,
+   "reqd": 1,
+   "show_in_filter": 0
+  },
+  {
+   "allow_read_on_all_link_options": 0,
+   "description": "Share any details you already know, or leave these blank and Golden Arrow will help you choose.",
+   "fieldname": "sb_additional",
+   "fieldtype": "Section Break",
+   "hidden": 0,
+   "label": "Additional details (optional)",
    "max_length": 0,
    "max_value": 0,
    "precision": "",
@@ -243,20 +257,6 @@
    "precision": "",
    "read_only": 0,
    "reqd": 0,
-   "show_in_filter": 0
-  },
-  {
-   "allow_read_on_all_link_options": 0,
-   "description": "Add anything else that may help us quote correctly, or tell us which details you would like Golden Arrow to recommend.",
-   "fieldname": "rough_spec",
-   "fieldtype": "Text",
-   "hidden": 0,
-   "label": "Tell us about your job",
-   "max_length": 0,
-   "max_value": 0,
-   "precision": "",
-   "read_only": 0,
-   "reqd": 1,
    "show_in_filter": 0
   }
  ]

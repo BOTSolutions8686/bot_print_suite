@@ -7,9 +7,9 @@
  "field_order": [
   "naming_series", "customer", "customer_name_new", "contact_name", "phone", "cb1",
   "source", "sales_partner", "status", "linked_estimate",
-  "sb_spec", "product_type", "requested_quantity", "finished_width_cm", "finished_height_cm",
-  "spec_cb", "printing_sides", "colours_front", "colours_back", "required_by",
-  "paper_preference", "finishing_requirements", "artwork", "rough_spec"
+  "sb_spec", "product_type", "requested_quantity", "rough_spec", "sb_additional",
+  "finished_width_cm", "finished_height_cm", "spec_cb", "printing_sides", "colours_front",
+  "colours_back", "required_by", "paper_preference", "finishing_requirements", "artwork"
  ],
  "fields": [
   {"fieldname": "naming_series", "fieldtype": "Select", "label": "Series", "options": "ENQ-.YYYY.-.#####", "reqd": 1},
@@ -38,6 +38,9 @@
    "description": "Choose the closest product. The estimator will confirm the technical production details."},
   {"fieldname": "requested_quantity", "fieldtype": "Int", "label": "How many do you need?",
    "description": "Enter the number of finished pieces required, for example 1,000 boxes or 5,000 flyers."},
+  {"fieldname": "sb_additional", "fieldtype": "Section Break", "label": "Additional details (optional)",
+   "description": "Share any details you already know, or leave these blank and Golden Arrow will help you choose.",
+   "collapsible": 1},
   {"fieldname": "finished_width_cm", "fieldtype": "Float", "label": "Finished Width (cm)",
    "description": "The final size after cutting or folding, if known."},
   {"fieldname": "finished_height_cm", "fieldtype": "Float", "label": "Finished Height (cm)",
