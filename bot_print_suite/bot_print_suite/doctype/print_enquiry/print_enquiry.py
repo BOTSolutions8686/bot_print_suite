@@ -16,6 +16,8 @@ class PrintEnquiry(Document):
 		enquiry to 'Estimating'. Customer/spec fields not captured here
 		are left for the estimator to fill on the estimate itself -
 		this is a starting point, not a full auto-fill."""
+		self.check_permission("write")
+		_require_permission("Print Estimate", "create")
 		if self.linked_estimate:
 			frappe.throw("An estimate is already linked to this enquiry.")
 		if not self.customer:
@@ -61,6 +63,7 @@ class PrintEnquiry(Document):
 		existing = frappe.db.get_value("Customer", {"customer_name": name}, "name")
 		if existing:
 			return existing
+		_require_permission("Customer", "create")
 
 		customer_group = frappe.db.get_single_value("Selling Settings", "customer_group")
 		if not customer_group or frappe.db.get_value("Customer Group", customer_group, "is_group"):
@@ -76,3 +79,11 @@ class PrintEnquiry(Document):
 			"territory": territory,
 		}).insert(ignore_permissions=True)
 		return customer.name
+
+
+def _require_permission(doctype, permission_type):
+	if not frappe.has_permission(doctype, ptype=permission_type):
+		frappe.throw(
+			f"You need {permission_type} permission on {doctype} to convert this enquiry.",
+			frappe.PermissionError,
+		)

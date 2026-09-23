@@ -12,6 +12,8 @@ def make_quotation(estimate_name, qty=None):
 	workflow (native Frappe Workflow config), not by code here.
 	"""
 	est = frappe.get_doc("Print Estimate", estimate_name)
+	est.check_permission("read")
+	_require_permission("Quotation", "create")
 	qty = frappe.utils.cint(qty) if qty else est.quantity
 
 	if qty == est.quantity:
@@ -87,6 +89,7 @@ def _get_or_create_placeholder_item(est):
 	created; 4d replaces this with a proper per-job Item."""
 	code = f"PRINT-JOB-{est.product_type.upper().replace(' ', '-')}"
 	if not frappe.db.exists("Item", code):
+		_require_permission("Item", "create")
 		frappe.get_doc({
 			"doctype": "Item",
 			"item_code": code,
@@ -96,3 +99,11 @@ def _get_or_create_placeholder_item(est):
 			"is_stock_item": 0,
 		}).insert(ignore_permissions=True)
 	return code
+
+
+def _require_permission(doctype, permission_type):
+	if not frappe.has_permission(doctype, ptype=permission_type):
+		frappe.throw(
+			f"You need {permission_type} permission on {doctype} to create this quotation.",
+			frappe.PermissionError,
+		)

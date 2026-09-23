@@ -18,6 +18,11 @@ from bot_print_suite.production.bom_bridge import create_job_bom
 @frappe.whitelist()
 def start_production(sales_order_name):
 	so = frappe.get_doc("Sales Order", sales_order_name)
+	so.check_permission("write")
+	_require_permission("BOM", "create")
+	_require_permission("Work Order", "create")
+	_require_permission("Work Order", "submit")
+	_require_permission("Stock Entry", "create")
 
 	bom_name = frappe.db.get_value("BOM", {"item": f"JOB-{sales_order_name}", "docstatus": 1})
 	if not bom_name:
@@ -53,3 +58,13 @@ def start_production(sales_order_name):
 	material_transfer.insert(ignore_permissions=True)  # left as draft - human submits
 
 	return {"work_order": work_order.name, "material_transfer": material_transfer.name}
+
+
+def _require_permission(doctype, permission_type):
+	"""Fail before privileged document creation if the caller could not
+	perform the equivalent action through ERPNext itself."""
+	if not frappe.has_permission(doctype, ptype=permission_type):
+		frappe.throw(
+			f"You need {permission_type} permission on {doctype} to start production.",
+			frappe.PermissionError,
+		)

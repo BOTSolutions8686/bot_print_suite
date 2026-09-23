@@ -73,6 +73,7 @@ class PrintEstimate(Document):
 		automatic on save, so switching templates never silently
 		overwrites rows an estimator already hand-edited for this
 		specific job without them asking for it."""
+		self.check_permission("write")
 		_apply_template(self)
 		self.save(ignore_permissions=True)
 		return len(self.applied_cost_drivers or [])
@@ -82,6 +83,7 @@ class PrintEstimate(Document):
 		"""Maps this estimate (or one chosen quantity-break row) into a
 		draft ERPNext Quotation. Approval happens via the Quotation
 		Approval workflow on the Quotation itself, not here."""
+		self.check_permission("write")
 		quotation = make_quotation(self.name, qty)
 		quotation.insert(ignore_permissions=True)
 		if self.enquiry:

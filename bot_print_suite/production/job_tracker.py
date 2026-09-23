@@ -28,6 +28,7 @@ def count_jobs_due_this_week(filters=None):
 	card type - omitting the parameter causes a silent TypeError on the
 	client, which renders as a blank number instead of an error. Caught
 	via an actual browser walkthrough, not assumed safe."""
+	_require_sales_order_read()
 	today = frappe.utils.nowdate()
 	week_end = frappe.utils.add_days(today, 7)
 	count = frappe.db.count("Sales Order", {
@@ -38,6 +39,7 @@ def count_jobs_due_this_week(filters=None):
 
 @frappe.whitelist()
 def count_overdue_jobs(filters=None):
+	_require_sales_order_read()
 	today = frappe.utils.nowdate()
 	count = frappe.db.count("Sales Order", {
 		"docstatus": 1, "delivery_date": ["<", today],
@@ -49,6 +51,7 @@ def count_overdue_jobs(filters=None):
 @frappe.whitelist()
 def get_job_tracker_data(sales_order):
 	so = frappe.get_doc("Sales Order", sales_order)
+	so.check_permission("read")
 
 	so_item = frappe.db.get_value("Sales Order Item", {"parent": sales_order}, "prevdoc_docname")
 	quotation_state = frappe.db.get_value("Quotation", so_item, "workflow_state") if so_item else None
@@ -94,3 +97,8 @@ def get_job_tracker_data(sales_order):
 		"current_index": current_index,
 		"status_line": status_line,
 	}
+
+
+def _require_sales_order_read():
+	if not frappe.has_permission("Sales Order", ptype="read"):
+		frappe.throw("You need read permission on Sales Order to view job metrics.", frappe.PermissionError)
