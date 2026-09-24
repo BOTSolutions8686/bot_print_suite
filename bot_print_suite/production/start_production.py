@@ -46,10 +46,11 @@ def start_production(sales_order_name):
 			"Material Request Item", {"sales_order": sales_order_name, "docstatus": ["<", 2]}, "parent"
 		)
 		shortages = _get_shortages(bom, stores_warehouse)
+		unvalued_items = _get_unvalued_items(bom, stores_warehouse)
 		if shortages and not material_request:
 			_require_permission("Material Request", "create")
 			material_request = _make_material_request(so, shortages, stores_warehouse).name
-		elif not shortages and work_order.docstatus == 1 and not material_transfer:
+		elif not shortages and not unvalued_items and work_order.docstatus == 1 and not material_transfer:
 			_require_permission("Stock Entry", "create")
 			material_transfer = _make_material_transfer(work_order.name, stores_warehouse).name
 		return _result(so, existing_work_order, material_transfer, material_request, True)
@@ -106,6 +107,19 @@ def _get_shortages(bom, warehouse):
 	return shortages
 
 
+def _get_unvalued_items(bom, warehouse):
+	"""Return materials physically present but still carrying no stock value."""
+	items = []
+	for row in bom.items:
+		stock = frappe.db.get_value(
+			"Bin", {"item_code": row.item_code, "warehouse": warehouse},
+			["actual_qty", "valuation_rate"], as_dict=True,
+		) or {}
+		if frappe.utils.flt(stock.get("actual_qty")) >= frappe.utils.flt(row.qty) and not frappe.utils.flt(stock.get("valuation_rate")):
+			items.append(row.item_code)
+	return items
+
+
 def _make_material_request(sales_order, shortages, warehouse):
 	request = frappe.get_doc({
 		"doctype": "Material Request",
@@ -148,6 +162,10 @@ def _result(sales_order, work_order, material_transfer, material_request, alread
 		"estimate_cost": estimate_cost,
 		"cost_variance": bom_cost - estimate_cost,
 		"work_order_status": frappe.db.get_value("Work Order", work_order, "docstatus"),
+		"unvalued_items": _get_unvalued_items(
+			frappe.get_doc("BOM", bom_name),
+			f"Stores - {frappe.db.get_value('Company', sales_order.company, 'abbr')}",
+		),
 	}
 
 

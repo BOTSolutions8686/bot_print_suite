@@ -1,3 +1,17 @@
+// ERPNext 16.22 still calls this removed Frappe 16 grid API while setting up
+// Work Order. Restore it on the two affected grids until the upstream fix is
+// available, otherwise the standard Work Order form renders as a blank page.
+frappe.ui.form.on("Work Order", {
+	setup(frm) {
+		["non_stock_items", "secondary_items"].forEach((fieldname) => {
+			const grid = frm.fields_dict[fieldname]?.grid;
+			if (grid && !grid.set_column_disp_in_list_view) {
+				grid.set_column_disp_in_list_view = grid.set_column_disp.bind(grid);
+			}
+		});
+	},
+});
+
 frappe.ui.form.on("Sales Order", {
 	onload(frm) {
 		// A Sales Order mapped from a Print Estimate is a production job, so
@@ -78,6 +92,11 @@ function add_print_job_action(frm) {
 						if (data.material_request) {
 							next_step += `<br><br>${__("Materials are short. Purchasing must review this draft request:")} ${link("material-request", data.material_request)}<br>${__("المواد ناقصة. يجب على المشتريات مراجعة طلب المواد المسودة.")}`;
 						}
+						if (data.unvalued_items && data.unvalued_items.length) {
+							next_step += `<br><br>${__("Accounting must add a stock value for:")} <b>${data.unvalued_items.join(", ")}</b><br>${__("يجب على المحاسبة إضافة قيمة مخزون لهذه المواد.")}`;
+						}
+					} else if (data.unvalued_items && data.unvalued_items.length) {
+						next_step = `${__("Accounting action needed: these materials have stock quantity but no valuation rate:")} <b>${data.unvalued_items.join(", ")}</b><br>${__("Enter their opening value or receive them through purchasing, then return here.")}<br>${__("مطلوب إجراء محاسبي: توجد كمية من هذه المواد بدون قيمة مخزون. أدخل القيمة الافتتاحية أو استلمها عن طريق المشتريات ثم ارجع هنا.")}`;
 					} else if (data.material_request && !data.material_transfer) {
 						next_step = `${__("Materials are short. Review the purchase request and receive the stock before transfer.")}<br>${__("المواد ناقصة. راجع طلب الشراء واستلم المواد قبل التحويل.")}<br>${__("Purchase Request")}: ${link("material-request", data.material_request)}`;
 					} else {
