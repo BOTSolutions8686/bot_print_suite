@@ -1,6 +1,22 @@
 frappe.ui.form.on("Sales Order", {
+	onload(frm) {
+		// A Sales Order mapped from a Print Estimate is a production job, so
+		// select the clear job-number series automatically. Users can still
+		// choose another series before saving if they genuinely need to.
+		if (
+			frm.is_new()
+			&& frm.doc.custom_print_estimate
+			&& frm.doc.naming_series === "SAL-ORD-.YYYY.-"
+		) {
+			frm.set_value("naming_series", "GA-JOB-.YYYY.-.####");
+		}
+	},
 	refresh(frm) {
-		if (frm.is_new()) return;
+		show_print_suite_sidebar();
+		if (frm.is_new()) {
+			render_new_order_tracker(frm);
+			return;
+		}
 
 		frappe.call({
 			method: "bot_print_suite.production.job_tracker.get_job_tracker_data",
@@ -11,6 +27,38 @@ frappe.ui.form.on("Sales Order", {
 		});
 	},
 });
+
+const JOB_STAGES = [
+	"Enquiry",
+	"Estimate",
+	"Quote",
+	"Approved",
+	"Artwork",
+	"Production",
+	"Delivery",
+	"Invoiced",
+];
+
+function render_new_order_tracker(frm) {
+	const from_quotation = (frm.doc.items || []).some((row) => row.prevdoc_docname);
+	const current_index = from_quotation ? 4 : 0;
+	render_job_tracker(frm, {
+		stages: JOB_STAGES,
+		completed: JOB_STAGES.map((_, index) => index < current_index),
+		current_index,
+		status_line: from_quotation
+			? "Save this job order to start artwork tracking."
+			: "Save this job order to begin tracking.",
+	});
+}
+
+function show_print_suite_sidebar() {
+	const sidebar = frappe?.app?.sidebar;
+	const available = frappe?.boot?.workspace_sidebar_item?.["print suite"];
+	if (sidebar && available && sidebar.sidebar_title !== "Print Suite") {
+		sidebar.setup("Print Suite");
+	}
+}
 
 const JOB_STAGE_AR = {
 	Enquiry: "الاستفسار",

@@ -17,6 +17,7 @@ frappe.ui.form.on('Sales Order', {
 			});
 		});
 
+		if (!frm.doc.custom_job_status || frm.doc.custom_job_status === 'Prepress') {
 		frm.add_custom_button('Start Production', function() {
 			frappe.confirm(
 				'This will create the BOM, routing, Work Order, and a draft Material Transfer for this job. Continue?',
@@ -28,10 +29,10 @@ frappe.ui.form.on('Sales Order', {
 						freeze_message: 'Building BOM, routing and Work Order...',
 						callback: function(r) {
 							if (r.message) {
+								const heading = r.message.already_started ? 'Production Already Started' : 'Production Started';
 								frappe.msgprint({
-									title: 'Production Started',
-									message: `Work Order <a href="/app/work-order/${r.message.work_order}">${r.message.work_order}</a> created and submitted.<br>` +
-										`Material Transfer <a href="/app/stock-entry/${r.message.material_transfer}">${r.message.material_transfer}</a> left as a draft for you to review.`,
+									title: heading,
+									message: `Work Order: ${r.message.work_order}<br>Material Transfer: ${r.message.material_transfer || 'Not created'}`,
 									indicator: 'green',
 								});
 								frm.reload_doc();
@@ -41,5 +42,13 @@ frappe.ui.form.on('Sales Order', {
 				}
 			);
 		}).addClass('btn-primary');
+		} else {
+			frappe.db.get_value('Work Order', { sales_order: frm.doc.name }, 'name').then(r => {
+				const work_order = r.message && r.message.name;
+				if (work_order) {
+					frm.add_custom_button('Open Work Order', () => frappe.set_route('Form', 'Work Order', work_order));
+				}
+			});
+		}
 	}
 });

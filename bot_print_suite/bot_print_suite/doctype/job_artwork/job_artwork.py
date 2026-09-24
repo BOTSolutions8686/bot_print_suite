@@ -3,6 +3,12 @@ from frappe.model.document import Document
 
 
 class JobArtwork(Document):
+	def validate(self):
+		if self.status != "Draft" and not self.artwork_file:
+			frappe.throw(
+				"Attach the customer artwork before sending it for review or approval."
+			)
+
 	def on_update(self):
 		# Revision Requested -> spawn the next version automatically as a
 		# fresh Draft, so the "each revision is its own record" versioning

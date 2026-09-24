@@ -73,12 +73,19 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 			"doctype": "Job Artwork",
 			"sales_order": sales_order.name,
 			"version_no": 1,
+			"artwork_file": "/private/files/test-artwork.pdf",
 		}).insert()
 		artwork = apply_workflow(artwork, "Send to Customer")
 		artwork = apply_workflow(artwork, "Approve")
 		self.assertEqual(artwork.status, "Approved")
 
 		production = start_production(sales_order.name)
+		production_again = start_production(sales_order.name)
+		self.assertTrue(production_again["already_started"])
+		self.assertEqual(production_again["work_order"], production["work_order"])
+		self.assertEqual(
+			production_again["material_transfer"], production["material_transfer"]
+		)
 		work_order = frappe.get_doc("Work Order", production["work_order"])
 		material_transfer = frappe.get_doc("Stock Entry", production["material_transfer"])
 		bom = frappe.get_doc("BOM", work_order.bom_no)

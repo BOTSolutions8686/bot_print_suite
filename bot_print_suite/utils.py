@@ -1,6 +1,12 @@
 import frappe
 
 
+def set_print_job_naming_series(doc, method=None):
+	"""Use a recognisable job number for Sales Orders made by Print Suite."""
+	if doc.get("custom_print_estimate") and doc.get("naming_series") == "SAL-ORD-.YYYY.-":
+		doc.naming_series = "GA-JOB-.YYYY.-.####"
+
+
 def assign_job_item_to_quotation(doc, method=None):
 	"""Give an app-generated Quotation its permanent finished-good Item
 	before ERPNext maps it into a Sales Order.
@@ -38,6 +44,27 @@ def _get_or_create_quotation_job_item(quotation_name, est):
 		"is_stock_item": 1,
 	}).insert(ignore_permissions=True)
 	return code
+
+
+def set_print_job_delivery_warehouse(doc, method=None):
+	"""Keep print-job deliveries simple and safe.
+
+	ERPNext may carry the company's raw-material default warehouse onto a
+	Delivery Note created from a Sales Order.  Finished print jobs must leave
+	from Finished Goods instead.  Only our job-specific Items are changed, so
+	ordinary ERPNext deliveries retain their native behaviour.
+	"""
+	if not doc.get("company"):
+		return
+
+	abbr = frappe.db.get_value("Company", doc.company, "abbr")
+	warehouse = f"Finished Goods - {abbr}" if abbr else None
+	if not warehouse or not frappe.db.exists("Warehouse", warehouse):
+		return
+
+	for row in doc.items:
+		if (row.item_code or "").startswith("JOB-"):
+			row.warehouse = warehouse
 
 _QUOTATION_STATUS_TO_ENQUIRY_STATUS = {
 	"Ordered": "Won",

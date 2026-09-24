@@ -43,7 +43,11 @@ required_apps = ["erpnext"]
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Sales Order": "public/js/sales_order.js"}
+# Frappe v16 can skip dynamically loading ``doctype_js`` for a core DocType
+# when the form is reached through a mapped document.  Keep the Sales Order
+# helper available on Desk as well; the script itself only registers handlers
+# for Sales Order.
+app_include_js = ["/assets/bot_print_suite/js/sales_order.js"]
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -147,6 +151,9 @@ doctype_js = {"Sales Order": "public/js/sales_order.js"}
 # }
 
 doc_events = {
+	"Sales Order": {
+		"before_naming": "bot_print_suite.utils.set_print_job_naming_series",
+	},
 	"Quotation": {
 		"before_submit": "bot_print_suite.utils.assign_job_item_to_quotation",
 		"on_update": "bot_print_suite.utils.sync_enquiry_status_from_quotation",
@@ -156,6 +163,9 @@ doc_events = {
 	},
 	"Job Card": {
 		"on_update": "bot_print_suite.utils.sync_job_status_from_job_card",
+	},
+	"Delivery Note": {
+		"before_validate": "bot_print_suite.utils.set_print_job_delivery_warehouse",
 	},
 }
 
@@ -315,7 +325,10 @@ fixtures = [
 	{"dt": "Client Script", "filters": [["name", "=", "Job Tracker Strip"]]},
 	{"dt": "Print Format", "filters": [["name", "in", ["Job Ticket", "Print Quotation"]]]},
 	{"dt": "Web Form", "filters": [["name", "=", "submit-a-print-enquiry"]]},
-	{"dt": "Custom DocPerm", "filters": [["parent", "in", ["Quotation", "Sales Order"]], ["role", "=", "Customer"]]},
+	# A Custom DocPerm on a DocType replaces its standard permission table;
+	# export the complete Quotation/Sales Order set, not only the added
+	# Customer row, or Sales/Stock users lose their normal ERPNext access.
+	{"dt": "Custom DocPerm", "filters": [["parent", "in", ["Quotation", "Sales Order"]]]},
 	"Portal Settings",
 	{"dt": "Workspace Sidebar", "filters": [["name", "=", "Print Suite"]]},
 	{"dt": "Desktop Icon", "filters": [["label", "=", "Print Suite"]]},

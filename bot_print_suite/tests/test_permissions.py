@@ -16,7 +16,11 @@ from bot_print_suite.production.job_tracker import _require_sales_order_read
 from bot_print_suite.production.start_production import (
 	_require_permission as require_production_permission,
 )
-from bot_print_suite.utils import assign_job_item_to_quotation
+from bot_print_suite.utils import (
+	assign_job_item_to_quotation,
+	set_print_job_delivery_warehouse,
+	set_print_job_naming_series,
+)
 
 
 class TestWhitelistedAPIPermissions(unittest.TestCase):
@@ -76,3 +80,61 @@ class TestQuotationJobItemAssignment(unittest.TestCase):
 		assign_job_item_to_quotation(quotation)
 
 		get_job_item.assert_not_called()
+
+
+class TestPrintJobDeliveryWarehouse(unittest.TestCase):
+	@patch("bot_print_suite.utils.frappe.db.exists", return_value=True)
+	@patch("bot_print_suite.utils.frappe.db.get_value", return_value="GAP")
+	def test_print_job_uses_finished_goods(self, _get_value, _exists):
+		job = SimpleNamespace(item_code="JOB-QTN-0001", warehouse="Stores - GAP")
+		ordinary = SimpleNamespace(item_code="DELIVERY", warehouse="Stores - GAP")
+		delivery = SimpleNamespace(
+			company="Golden Arrow Printing",
+			items=[job, ordinary],
+			get=lambda field: getattr(delivery, field, None),
+		)
+
+		set_print_job_delivery_warehouse(delivery)
+
+		self.assertEqual(job.warehouse, "Finished Goods - GAP")
+		self.assertEqual(ordinary.warehouse, "Stores - GAP")
+
+	@patch("bot_print_suite.utils.frappe.db.exists", return_value=False)
+	@patch("bot_print_suite.utils.frappe.db.get_value", return_value="GAP")
+	def test_missing_finished_goods_warehouse_keeps_erpnext_default(
+		self, _get_value, _exists
+	):
+		job = SimpleNamespace(item_code="JOB-QTN-0001", warehouse="Stores - GAP")
+		delivery = SimpleNamespace(
+			company="Golden Arrow Printing",
+			items=[job],
+			get=lambda field: getattr(delivery, field, None),
+		)
+
+		set_print_job_delivery_warehouse(delivery)
+
+		self.assertEqual(job.warehouse, "Stores - GAP")
+
+
+class TestPrintJobNaming(unittest.TestCase):
+	def test_print_suite_sales_order_uses_job_series(self):
+		order = SimpleNamespace(
+			custom_print_estimate="PE-0001",
+			naming_series="SAL-ORD-.YYYY.-",
+			get=lambda field: getattr(order, field, None),
+		)
+
+		set_print_job_naming_series(order)
+
+		self.assertEqual(order.naming_series, "GA-JOB-.YYYY.-.####")
+
+	def test_ordinary_sales_order_keeps_standard_series(self):
+		order = SimpleNamespace(
+			custom_print_estimate=None,
+			naming_series="SAL-ORD-.YYYY.-",
+			get=lambda field: getattr(order, field, None),
+		)
+
+		set_print_job_naming_series(order)
+
+		self.assertEqual(order.naming_series, "SAL-ORD-.YYYY.-")

@@ -24,6 +24,27 @@ def start_production(sales_order_name):
 	_require_permission("Work Order", "submit")
 	_require_permission("Stock Entry", "create")
 
+	existing_work_order = frappe.db.get_value(
+		"Work Order",
+		{"sales_order": sales_order_name, "docstatus": ["<", 2]},
+		"name",
+	)
+	if existing_work_order:
+		material_transfer = frappe.db.get_value(
+			"Stock Entry",
+			{
+				"work_order": existing_work_order,
+				"stock_entry_type": "Material Transfer for Manufacture",
+				"docstatus": ["<", 2],
+			},
+			"name",
+		)
+		return {
+			"work_order": existing_work_order,
+			"material_transfer": material_transfer,
+			"already_started": True,
+		}
+
 	production_item = frappe.db.get_value(
 		"Sales Order Item", {"parent": sales_order_name}, "item_code"
 	)
@@ -60,7 +81,11 @@ def start_production(sales_order_name):
 		row.allow_zero_valuation_rate = 1
 	material_transfer.insert(ignore_permissions=True)  # left as draft - human submits
 
-	return {"work_order": work_order.name, "material_transfer": material_transfer.name}
+	return {
+		"work_order": work_order.name,
+		"material_transfer": material_transfer.name,
+		"already_started": False,
+	}
 
 
 def _require_permission(doctype, permission_type):

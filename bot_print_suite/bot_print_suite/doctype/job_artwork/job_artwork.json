@@ -13,10 +13,13 @@
   {"fieldname": "version_no", "fieldtype": "Int", "label": "Version", "default": "1", "in_list_view": 1},
   {"fieldname": "cb1", "fieldtype": "Column Break"},
   {"fieldname": "status", "fieldtype": "Select", "label": "Status", "default": "Draft", "in_list_view": 1,
-   "options": "Draft\nSent to Customer\nApproved\nRevision Requested"},
+   "options": "Draft\nSent to Customer\nApproved\nRevision Requested", "read_only": 1,
+   "description": "Use the Actions button above to move the artwork through customer review."},
   {"fieldname": "sb_file", "fieldtype": "Section Break", "label": "Artwork"},
-  {"fieldname": "artwork_file", "fieldtype": "Attach", "label": "Artwork File"},
-  {"fieldname": "customer_comment", "fieldtype": "Small Text", "label": "Customer Comment"}
+  {"fieldname": "artwork_file", "fieldtype": "Attach", "label": "Artwork File",
+   "description": "Attach the PDF or image the customer will review. Required before sending or approving."},
+  {"fieldname": "customer_comment", "fieldtype": "Small Text", "label": "Customer Comment",
+   "description": "Record the customer's approval, requested correction, or other feedback."}
  ],
  "index_web_pages_for_search": 1,
  "links": [],
