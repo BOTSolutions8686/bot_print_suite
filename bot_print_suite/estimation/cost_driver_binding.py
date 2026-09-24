@@ -103,20 +103,25 @@ def sync_packing_configuration(doc):
 			for keyword in _PACKING_LIKE_KEYWORDS)
 	]
 	if not packing_rows:
+		doc.packing_cost_override_enabled = 0
 		doc.packing_cost = None
 		return
 
-	packing_input_changed = not doc.is_new() and doc.has_value_changed("packing_cost")
-	packing_input_supplied = doc.get("packing_cost") not in (None, "")
-	if packing_input_changed or (doc.is_new() and packing_input_supplied):
+	control_changed = not doc.is_new() and (
+		doc.has_value_changed("packing_cost_override_enabled")
+		or doc.has_value_changed("packing_cost")
+	)
+	manual = bool(doc.get("packing_cost_override_enabled"))
+	if control_changed or (doc.is_new() and manual):
 		for row in packing_rows:
-			row.cost_override_enabled = 1 if packing_input_supplied else 0
-			if packing_input_supplied:
-				row.cost_override = float(doc.packing_cost)
+			row.cost_override_enabled = 1 if manual else 0
+			if manual:
+				row.cost_override = float(doc.packing_cost or 0)
 				if not row.override_reason:
 					row.override_reason = "Entered in Finishing & Delivery"
 	else:
 		overridden = next((row for row in packing_rows if row.cost_override_enabled), None)
+		doc.packing_cost_override_enabled = 1 if overridden else 0
 		doc.packing_cost = float(overridden.cost_override or 0) if overridden else None
 
 

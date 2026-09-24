@@ -102,13 +102,12 @@ function sync_packing_override(frm) {
 	const row = (frm.doc.applied_cost_drivers || []).find(r =>
 		(r.cost_driver || '').toLowerCase().includes('packing'));
 	if (!row) return Promise.resolve();
-	const supplied = frm.doc.packing_cost !== null &&
-		frm.doc.packing_cost !== undefined && frm.doc.packing_cost !== '';
+	const manual = Boolean(frm.doc.packing_cost_override_enabled);
 	frm.__bps_syncing_packing = true;
 	return frappe.model.set_value(row.doctype, row.name, {
-		cost_override_enabled: supplied ? 1 : 0,
-		cost_override: supplied ? flt(frm.doc.packing_cost) : row.cost_override,
-		override_reason: supplied && !row.override_reason
+		cost_override_enabled: manual ? 1 : 0,
+		cost_override: manual ? flt(frm.doc.packing_cost) : row.cost_override,
+		override_reason: manual && !row.override_reason
 			? __('Entered in Finishing & Delivery') : row.override_reason,
 	}).then(() => frm.refresh_field('applied_cost_drivers'))
 		.finally(() => { frm.__bps_syncing_packing = false; });
@@ -244,6 +243,10 @@ frappe.ui.form.on('Print Estimate', {
 		if (frm.__bps_syncing_packing) return;
 		sync_packing_override(frm).finally(() => prompt_finishing_recalculation(frm));
 	},
+	packing_cost_override_enabled: function(frm) {
+		if (frm.__bps_syncing_packing) return;
+		sync_packing_override(frm).finally(() => prompt_finishing_recalculation(frm));
+	},
 });
 
 // Live row highlight the instant someone ticks the checkbox, without
@@ -257,7 +260,10 @@ frappe.ui.form.on('Print Estimate Cost Driver Line', {
 		if (!row || frm.__bps_syncing_packing ||
 			!(row.cost_driver || '').toLowerCase().includes('packing')) return;
 		frm.__bps_syncing_packing = true;
-		frm.set_value('packing_cost', row.cost_override_enabled ? flt(row.cost_override) : null)
+		Promise.all([
+			frm.set_value('packing_cost_override_enabled', row.cost_override_enabled ? 1 : 0),
+			frm.set_value('packing_cost', row.cost_override_enabled ? flt(row.cost_override) : null),
+		])
 			.finally(() => { frm.__bps_syncing_packing = false; });
 	},
 	cost_override: function(frm, cdt, cdn) {

@@ -13,6 +13,10 @@ def execute():
 		if "packing" not in (row.cost_driver or "").lower():
 			continue
 		frappe.db.set_value(
-			"Print Estimate", row.parent, "packing_cost",
-			float(row.cost_override or 0), update_modified=False,
+			"Print Estimate", row.parent,
+			{
+				"packing_cost_override_enabled": 1,
+				"packing_cost": float(row.cost_override or 0),
+			},
+			update_modified=False,
 		)

@@ -139,6 +139,7 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		# amount (including zero) drives the row's native override.
 		packing_row = next(row for row in estimate.applied_cost_drivers
 			if "packing" in row.cost_driver.lower())
+		estimate.packing_cost_override_enabled = 1
 		estimate.packing_cost = 123
 		estimate.save()
 		self.assertTrue(packing_row.cost_override_enabled)
@@ -147,6 +148,7 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		estimate.packing_cost = 0
 		estimate.save()
 		self.assertEqual(packing_row.computed_cost, 0)
+		estimate.packing_cost_override_enabled = 0
 		estimate.packing_cost = None
 		estimate.save()
 		self.assertFalse(packing_row.cost_override_enabled)
