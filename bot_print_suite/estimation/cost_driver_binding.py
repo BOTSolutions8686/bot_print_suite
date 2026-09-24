@@ -63,9 +63,21 @@ def sync_glue_configuration(doc):
 	glue_choice_changed = not doc.is_new() and doc.has_value_changed("glue_sides")
 	if glue_choice_changed:
 		for row in glue_rows:
-			row.enabled = 1 if doc.glue_sides else 0
+			row.enabled = 1 if int(doc.glue_sides or 0) > 0 else 0
 	else:
-		doc.glue_sides = 1 if any(row.enabled for row in glue_rows) else 0
+		if any(row.enabled for row in glue_rows):
+			doc.glue_sides = max(1, int(doc.glue_sides or 0))
+		else:
+			doc.glue_sides = 0
+
+	if int(doc.glue_sides or 0) > 1:
+		unpriced_rows = [row for row in glue_rows if row.enabled and not row.cost_override_enabled]
+		if unpriced_rows:
+			frappe.throw(
+				"For gluing on 2 or more sides, open Cost Items & Adjustments, "
+				"open the Glue row, select Override, and enter the confirmed total glue cost. "
+				"Only the one-side automatic rate has been verified."
+			)
 
 
 def apply_template(doc):

@@ -10,10 +10,11 @@ from bot_print_suite.estimation.cost_driver_binding import (
 class PrintEstimate(Document):
 	def validate(self):
 		# Present the die decision in plain language while retaining the
-		# established boolean used by the costing engine. "Not sure" is
-		# deliberately conservative and includes the new-die charge.
+		# established boolean used by the costing engine. The estimate
+		# stage has only two actionable outcomes: make and
+		# charge a new die, or reuse the exact existing die at zero cost.
 		if self.die_requirement:
-			self.reusing_existing_die = self.die_requirement == "Existing die available"
+			self.reusing_existing_die = self.die_requirement == "Use existing die"
 
 		# Templates are now mandatory (product_template is reqd=1) - the
 		# old static, non-templated calculation path has been removed
