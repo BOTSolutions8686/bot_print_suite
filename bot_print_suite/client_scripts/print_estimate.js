@@ -142,6 +142,7 @@ frappe.ui.form.on('Print Estimate', {
 		// whole cost table to notice something was manually adjusted.
 		const overridden = (frm.doc.applied_cost_drivers || []).filter(r => r.cost_override_enabled);
 		const notes = overridden.map(r => r.cost_driver);
+		if (frm.doc.paper_cost_override_enabled) notes.push('Paper Cost');
 		if (frm.doc.ups_override_enabled) notes.push('Ups per Sheet');
 		if (notes.length && frm.dashboard && frm.dashboard.set_headline_alert) {
 			frm.dashboard.set_headline_alert(
@@ -246,6 +247,12 @@ frappe.ui.form.on('Print Estimate', {
 	packing_cost_override_enabled: function(frm) {
 		if (frm.__bps_syncing_packing) return;
 		sync_packing_override(frm).finally(() => prompt_finishing_recalculation(frm));
+	},
+	paper_cost_override_enabled: function(frm) {
+		prompt_finishing_recalculation(frm);
+	},
+	paper_cost_override: function(frm) {
+		prompt_finishing_recalculation(frm);
 	},
 });
 

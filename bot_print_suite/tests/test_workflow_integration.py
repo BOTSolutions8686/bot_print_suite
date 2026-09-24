@@ -51,6 +51,28 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 			for row in estimate.applied_cost_drivers
 		))
 
+		# Paper remains a separate first-class cost rather than a template
+		# Cost Item. Its explicit checkbox must support both a confirmed
+		# amount and an intentional zero, then restore the normal engine
+		# exactly when switched off.
+		automatic_paper_cost = estimate.paper_cost
+		automatic_subtotal = estimate.subtotal
+		estimate.paper_cost_override_enabled = 1
+		estimate.paper_cost_override = 100
+		estimate.save()
+		self.assertEqual(estimate.paper_cost, 100)
+		self.assertAlmostEqual(
+			estimate.subtotal, automatic_subtotal - automatic_paper_cost + 100, places=2)
+		self.assertIn("Manual override", estimate.reconciliation_table_data)
+		estimate.paper_cost_override = 0
+		estimate.save()
+		self.assertEqual(estimate.paper_cost, 0)
+		estimate.paper_cost_override_enabled = 0
+		estimate.paper_cost_override = None
+		estimate.save()
+		self.assertAlmostEqual(estimate.paper_cost, automatic_paper_cost, places=2)
+		self.assertAlmostEqual(estimate.subtotal, automatic_subtotal, places=2)
+
 		# The simple finishing controls must drive the real estimate, not
 		# merely record labels that disagree with the Cost Items table.
 		die_row = next(row for row in estimate.applied_cost_drivers

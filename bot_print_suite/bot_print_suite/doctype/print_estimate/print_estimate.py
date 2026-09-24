@@ -67,6 +67,11 @@ class PrintEstimate(Document):
 			self.die_area_cm2 = round(float(self.die_width_cm or 0) * float(self.die_height_cm or 0), 2)
 
 			compute_estimate(self)
+			# Preserve the normal paper engine as the default. A separately
+			# gated override is applied only after that calculation, so an
+			# intentional zero is different from leaving the field unused.
+			if self.get("paper_cost_override_enabled"):
+				self.paper_cost = round(float(self.paper_cost_override or 0), 2)
 			compute_driver_costs(self)
 			enforce_template_requirements(self)
 

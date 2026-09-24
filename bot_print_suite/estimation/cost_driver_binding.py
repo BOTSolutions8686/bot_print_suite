@@ -532,10 +532,20 @@ def build_reconciliation_table(doc):
 	rows = []
 
 	paper_type_name = doc.paper_type or "-"
-	cost_per_sheet = round((doc.paper_cost or 0) / doc.sheets_required, 4) if doc.sheets_required else 0
-	paper_formula = f"{cost_per_sheet:g} SAR/sheet \u00d7 {doc.sheets_required or 0:,} sheets = {doc.paper_cost or 0:,.2f} SAR"
-	rows.append(("Paper (\u0648\u0631\u0642)", paper_type_name, f"{cost_per_sheet:g} SAR/sheet",
-		f"{doc.sheets_required or 0:,} sheets", doc.paper_cost or 0, paper_formula))
+	if doc.get("paper_cost_override_enabled"):
+		paper_rate = "Manual override"
+		paper_qty = "Confirmed total"
+		paper_formula = (
+			f"Manually entered: {float(doc.paper_cost_override or 0):,.2f} SAR "
+			"(replaces the normal paper calculation entirely)"
+		)
+	else:
+		cost_per_sheet = round((doc.paper_cost or 0) / doc.sheets_required, 4) if doc.sheets_required else 0
+		paper_rate = f"{cost_per_sheet:g} SAR/sheet"
+		paper_qty = f"{doc.sheets_required or 0:,} sheets"
+		paper_formula = f"{cost_per_sheet:g} SAR/sheet \u00d7 {doc.sheets_required or 0:,} sheets = {doc.paper_cost or 0:,.2f} SAR"
+	rows.append(("Paper (\u0648\u0631\u0642)", paper_type_name, paper_rate,
+		paper_qty, doc.paper_cost or 0, paper_formula))
 
 	for row in (doc.applied_cost_drivers or []):
 		if not row.enabled:
