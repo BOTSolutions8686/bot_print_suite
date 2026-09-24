@@ -41,6 +41,7 @@ _CUTTING_LIKE_KEYWORDS = ("cutting",)
 _PRINTING_LIKE_KEYWORDS = ("printing",)
 
 _GLUE_LIKE_KEYWORDS = ("glue", "gluing")
+_MULTI_SIDE_OVERRIDE_REASON = "Confirmed total for multi-side gluing"
 
 
 def sync_glue_configuration(doc):
@@ -70,14 +71,37 @@ def sync_glue_configuration(doc):
 		else:
 			doc.glue_sides = 0
 
-	if int(doc.glue_sides or 0) > 1:
-		unpriced_rows = [row for row in glue_rows if row.enabled and not row.cost_override_enabled]
-		if unpriced_rows:
+	sides = int(doc.glue_sides or 0)
+	if sides > 1:
+		confirmed_total = float(doc.get("multi_side_glue_cost") or 0)
+		if confirmed_total <= 0:
+			# Preserve an older manually entered Glue-row override by lifting
+			# it into the new, easier top-level field on the next save.
+			existing_override = next((
+				row for row in glue_rows if row.enabled and row.cost_override_enabled
+			), None)
+			if existing_override:
+				confirmed_total = float(existing_override.cost_override or 0)
+				doc.multi_side_glue_cost = confirmed_total
+		if confirmed_total <= 0:
 			frappe.throw(
-				"For gluing on 2 or more sides, open Cost Items & Adjustments, "
-				"open the Glue row, select Override, and enter the confirmed total glue cost. "
+				"Enter Confirmed Total Glue Cost for gluing on two or more sides. "
 				"Only the one-side automatic rate has been verified."
 			)
+		for row in glue_rows:
+			if row.enabled:
+				row.cost_override_enabled = 1
+				row.cost_override = confirmed_total
+				row.override_reason = f"{_MULTI_SIDE_OVERRIDE_REASON} ({sides} sides)"
+	else:
+		doc.multi_side_glue_cost = 0
+		# Clear only overrides created by this helper. A deliberate manual
+		# row override for a one-side job remains untouched.
+		for row in glue_rows:
+			if (row.override_reason or "").startswith(_MULTI_SIDE_OVERRIDE_REASON):
+				row.cost_override_enabled = 0
+				row.cost_override = 0
+				row.override_reason = None
 
 
 def apply_template(doc):
