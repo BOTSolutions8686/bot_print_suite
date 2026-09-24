@@ -40,6 +40,33 @@ _CUTTING_LIKE_KEYWORDS = ("cutting",)
 # tier bracket entirely, not just double the same rate.
 _PRINTING_LIKE_KEYWORDS = ("printing",)
 
+_GLUE_LIKE_KEYWORDS = ("glue", "gluing")
+
+
+def sync_glue_configuration(doc):
+	"""Keep the simple job-level glue choice and detailed cost row aligned.
+
+	The currently confirmed Golden Arrow pricing is for one-side gluing,
+	so this field is intentionally a yes/no choice. When the user changes
+	the checkbox it controls the glue cost row. Otherwise the row remains
+	the source of truth (important when a template is applied or a row is
+	changed directly in the native child table).
+	"""
+	glue_rows = [
+		row for row in (doc.get("applied_cost_drivers") or [])
+		if any(keyword in (row.cost_driver or "").lower() for keyword in _GLUE_LIKE_KEYWORDS)
+	]
+	if not glue_rows:
+		doc.glue_sides = 0
+		return
+
+	glue_choice_changed = not doc.is_new() and doc.has_value_changed("glue_sides")
+	if glue_choice_changed:
+		for row in glue_rows:
+			row.enabled = 1 if doc.glue_sides else 0
+	else:
+		doc.glue_sides = 1 if any(row.enabled for row in glue_rows) else 0
+
 
 def apply_template(doc):
 	"""Populates applied_cost_drivers from doc.product_template's driver
@@ -56,6 +83,7 @@ def apply_template(doc):
 			"cost_driver": line.cost_driver,
 			"enabled": 1 if line.default_enabled else 0,
 		})
+	sync_glue_configuration(doc)
 
 
 def compute_driver_costs(doc):

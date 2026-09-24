@@ -45,6 +45,11 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		estimate.save()
 		self.assertGreater(estimate.sell_price, 0)
 		self.assertGreater(estimate.sheets_required, 0)
+		self.assertEqual(estimate.glue_sides, 1)
+		self.assertTrue(any(
+			row.enabled and "glue" in row.cost_driver.lower()
+			for row in estimate.applied_cost_drivers
+		))
 
 		quotation_name = estimate.create_quotation()
 		quotation = frappe.get_doc("Quotation", quotation_name)

@@ -4,7 +4,7 @@ from bot_print_suite.estimation.engine import compute_estimate
 from bot_print_suite.estimation.quotation_mapper import make_quotation
 from bot_print_suite.estimation.cost_driver_binding import (
 	apply_template as _apply_template, compute_driver_costs, build_reconciliation_table,
-	enforce_template_requirements)
+	enforce_template_requirements, sync_glue_configuration)
 
 
 class PrintEstimate(Document):
@@ -29,6 +29,11 @@ class PrintEstimate(Document):
 		# what the explicit "Apply Template" button on the form is for.
 		if self.product_template and not self.get("applied_cost_drivers"):
 			_apply_template(self)
+
+		# The visible glue choice and the enabled Glue cost row must never
+		# disagree. The confirmed rate is specifically for one-side gluing,
+		# so this is a simple yes/no field rather than a misleading count.
+		sync_glue_configuration(self)
 
 		# product_type is now a hidden, reporting-only field, auto-set
 		# from the template rather than asked of the user - one less
