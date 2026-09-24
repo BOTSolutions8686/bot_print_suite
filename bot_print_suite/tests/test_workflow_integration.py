@@ -134,6 +134,24 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		self.assertFalse(lamination_row.enabled)
 		self.assertEqual(lamination_row.computed_cost, 0)
 
+		# Packing can be entered where the estimator naturally makes the
+		# finishing decision. Blank uses the carton calculation; an entered
+		# amount (including zero) drives the row's native override.
+		packing_row = next(row for row in estimate.applied_cost_drivers
+			if "packing" in row.cost_driver.lower())
+		estimate.packing_cost = 123
+		estimate.save()
+		self.assertTrue(packing_row.cost_override_enabled)
+		self.assertEqual(packing_row.computed_cost, 123)
+		self.assertEqual(packing_row.source, "Manual Override")
+		estimate.packing_cost = 0
+		estimate.save()
+		self.assertEqual(packing_row.computed_cost, 0)
+		estimate.packing_cost = None
+		estimate.save()
+		self.assertFalse(packing_row.cost_override_enabled)
+		self.assertEqual(packing_row.source, "Calculated")
+
 		# Every cost row's native override must replace the calculated value,
 		# including a deliberate override of exactly zero.
 		artwork_row = next(row for row in estimate.applied_cost_drivers

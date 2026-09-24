@@ -98,11 +98,28 @@ function sync_cost_row_enabled(frm, keyword, enabled) {
 		.then(() => frm.refresh_field('applied_cost_drivers'));
 }
 
+function sync_packing_override(frm) {
+	const row = (frm.doc.applied_cost_drivers || []).find(r =>
+		(r.cost_driver || '').toLowerCase().includes('packing'));
+	if (!row) return Promise.resolve();
+	const supplied = frm.doc.packing_cost !== null &&
+		frm.doc.packing_cost !== undefined && frm.doc.packing_cost !== '';
+	frm.__bps_syncing_packing = true;
+	return frappe.model.set_value(row.doctype, row.name, {
+		cost_override_enabled: supplied ? 1 : 0,
+		cost_override: supplied ? flt(frm.doc.packing_cost) : row.cost_override,
+		override_reason: supplied && !row.override_reason
+			? __('Entered in Finishing & Delivery') : row.override_reason,
+	}).then(() => frm.refresh_field('applied_cost_drivers'))
+		.finally(() => { frm.__bps_syncing_packing = false; });
+}
+
 function prompt_finishing_recalculation(frm) {
 	if (frm.is_new()) {
 		frappe.show_alert({message: __('Save the estimate to calculate costs.'), indicator: 'blue'});
 		return;
 	}
+	if (!frm.is_dirty()) return;
 	frappe.show_alert({message: __('Finishing changed — click Save to recalculate costs.'), indicator: 'orange'}, 7);
 }
 
@@ -223,6 +240,10 @@ frappe.ui.form.on('Print Estimate', {
 				prompt_finishing_recalculation(frm);
 			});
 	},
+	packing_cost: function(frm) {
+		if (frm.__bps_syncing_packing) return;
+		sync_packing_override(frm).finally(() => prompt_finishing_recalculation(frm));
+	},
 });
 
 // Live row highlight the instant someone ticks the checkbox, without
@@ -230,8 +251,22 @@ frappe.ui.form.on('Print Estimate', {
 // not the parent, so it needs its own handler even though the CSS
 // class and helper function are shared with the parent's refresh.
 frappe.ui.form.on('Print Estimate Cost Driver Line', {
-	cost_override_enabled: function(frm) {
+	cost_override_enabled: function(frm, cdt, cdn) {
 		highlight_overridden_rows(frm);
+		const row = locals[cdt] && locals[cdt][cdn];
+		if (!row || frm.__bps_syncing_packing ||
+			!(row.cost_driver || '').toLowerCase().includes('packing')) return;
+		frm.__bps_syncing_packing = true;
+		frm.set_value('packing_cost', row.cost_override_enabled ? flt(row.cost_override) : null)
+			.finally(() => { frm.__bps_syncing_packing = false; });
+	},
+	cost_override: function(frm, cdt, cdn) {
+		const row = locals[cdt][cdn];
+		if (frm.__bps_syncing_packing || !row.cost_override_enabled ||
+			!(row.cost_driver || '').toLowerCase().includes('packing')) return;
+		frm.__bps_syncing_packing = true;
+		frm.set_value('packing_cost', flt(row.cost_override))
+			.finally(() => { frm.__bps_syncing_packing = false; });
 	},
 	enabled: function(frm, cdt, cdn) {
 		if (frm.__bps_syncing_finishing) return;

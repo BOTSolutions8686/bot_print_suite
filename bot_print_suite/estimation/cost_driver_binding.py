@@ -42,6 +42,7 @@ _PRINTING_LIKE_KEYWORDS = ("printing",)
 
 _GLUE_LIKE_KEYWORDS = ("glue", "gluing")
 _LAMINATION_LIKE_KEYWORDS = ("lamination", "laminating")
+_PACKING_LIKE_KEYWORDS = ("packing", "packaging")
 
 
 def sync_glue_configuration(doc):
@@ -89,6 +90,36 @@ def sync_lamination_configuration(doc):
 		doc.lamination_required = 1 if any(row.enabled for row in lamination_rows) else 0
 
 
+def sync_packing_configuration(doc):
+	"""Expose the Packing row's manual override as one simple job-level input.
+
+	A blank value keeps the normal carton calculation. Any entered value,
+	including exactly zero, replaces that calculation. Direct edits in the
+	native Cost Items row continue to work and sync back to the simple field.
+	"""
+	packing_rows = [
+		row for row in (doc.get("applied_cost_drivers") or [])
+		if any(keyword in (row.cost_driver or "").lower()
+			for keyword in _PACKING_LIKE_KEYWORDS)
+	]
+	if not packing_rows:
+		doc.packing_cost = None
+		return
+
+	packing_input_changed = not doc.is_new() and doc.has_value_changed("packing_cost")
+	packing_input_supplied = doc.get("packing_cost") not in (None, "")
+	if packing_input_changed or (doc.is_new() and packing_input_supplied):
+		for row in packing_rows:
+			row.cost_override_enabled = 1 if packing_input_supplied else 0
+			if packing_input_supplied:
+				row.cost_override = float(doc.packing_cost)
+				if not row.override_reason:
+					row.override_reason = "Entered in Finishing & Delivery"
+	else:
+		overridden = next((row for row in packing_rows if row.cost_override_enabled), None)
+		doc.packing_cost = float(overridden.cost_override or 0) if overridden else None
+
+
 
 def apply_template(doc):
 	"""Populates applied_cost_drivers from doc.product_template's driver
@@ -107,6 +138,7 @@ def apply_template(doc):
 		})
 	sync_glue_configuration(doc)
 	sync_lamination_configuration(doc)
+	sync_packing_configuration(doc)
 
 
 def compute_driver_costs(doc):

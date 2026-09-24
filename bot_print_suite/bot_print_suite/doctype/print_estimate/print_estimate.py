@@ -4,7 +4,8 @@ from bot_print_suite.estimation.engine import compute_estimate
 from bot_print_suite.estimation.quotation_mapper import make_quotation
 from bot_print_suite.estimation.cost_driver_binding import (
 	apply_template as _apply_template, compute_driver_costs, build_reconciliation_table,
-	enforce_template_requirements, sync_glue_configuration, sync_lamination_configuration)
+	enforce_template_requirements, sync_glue_configuration, sync_lamination_configuration,
+	sync_packing_configuration)
 
 
 class PrintEstimate(Document):
@@ -36,6 +37,7 @@ class PrintEstimate(Document):
 		# so this is a simple yes/no field rather than a misleading count.
 		sync_glue_configuration(self)
 		sync_lamination_configuration(self)
+		sync_packing_configuration(self)
 
 		# product_type is now a hidden, reporting-only field, auto-set
 		# from the template rather than asked of the user - one less
