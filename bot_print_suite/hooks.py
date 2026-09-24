@@ -68,6 +68,9 @@ doctype_js = {"Print Estimate": "client_scripts/print_estimate.js"}
 # role_home_page = {
 # 	"Role": "home_page"
 # }
+jinja = {
+	"methods": ["bot_print_suite.production.job_ticket.get_job_ticket_context"],
+}
 
 # Generators
 # ----------

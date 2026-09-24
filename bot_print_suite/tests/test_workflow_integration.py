@@ -7,6 +7,7 @@ from frappe.utils import add_days, nowdate
 
 from bot_print_suite.production.start_production import start_production
 from bot_print_suite.production.artwork import get_or_create_job_artwork
+from bot_print_suite.production.job_ticket import get_job_ticket_context
 from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 
@@ -231,6 +232,11 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		self.assertEqual(sales_order.items[0].item_code, quotation.items[0].item_code)
 		self.assertEqual(sales_order.items[0].prevdoc_docname, quotation.name)
 		self.assertAlmostEqual(sales_order.grand_total, quotation.grand_total, places=2)
+		job_ticket = get_job_ticket_context(sales_order.name)
+		self.assertEqual(job_ticket.estimate.name, estimate.name)
+		self.assertEqual(job_ticket.quotation, quotation.name)
+		self.assertEqual(job_ticket.impressions, estimate.sheets_required)
+		self.assertTrue(any(row.english == "Printing" for row in job_ticket.operations))
 
 		with self.assertRaises(frappe.ValidationError):
 			start_production(sales_order.name)
