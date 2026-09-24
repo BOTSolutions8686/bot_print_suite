@@ -26,6 +26,15 @@ _FINISHING_WORKSTATION = {
 	"Lamination": "Laminator", "Foiling": "Laminator", "Embossing": "Laminator",
 	"UV Coating": "Laminator", "Die-cut": "Die-Cutter", "Gluing": "Gluer",
 }
+_COST_DRIVER_TO_FINISHING = {
+	"lamination": "Lamination",
+	"foil": "Foiling",
+	"emboss": "Embossing",
+	"uv": "UV Coating",
+	"die": "Die-cut",
+	"cutting": "Die-cut",
+	"glue": "Gluing",
+}
 _PLACEHOLDER_OP_MINUTES = 30
 
 
@@ -81,8 +90,23 @@ def _derive_operations(est):
 	ready to append to a BOM's operations table."""
 	ops = [("CTP", "CTP"), ("Press", est.press)]
 
-	present = {row.finishing_rate_card and frappe.db.get_value(
-		"Finishing Rate Card", row.finishing_rate_card, "operation") for row in (est.finishing_operations or [])}
+	# Backward-compatible with early estimates that used a dedicated
+	# Finishing Operations table, while current estimates represent these
+	# choices as enabled Cost Items.
+	present = {
+		row.finishing_rate_card and frappe.db.get_value(
+			"Finishing Rate Card", row.finishing_rate_card, "operation"
+		)
+		for row in (est.get("finishing_operations") or [])
+	}
+	for row in est.get("applied_cost_drivers") or []:
+		if not row.enabled:
+			continue
+		name = (row.cost_driver or "").lower()
+		for keyword, operation in _COST_DRIVER_TO_FINISHING.items():
+			if keyword in name:
+				present.add(operation)
+				break
 	for op_name in _CANONICAL_FINISHING_ORDER:
 		if op_name in present:
 			ops.append((op_name, _FINISHING_WORKSTATION[op_name]))

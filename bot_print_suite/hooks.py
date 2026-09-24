@@ -43,7 +43,7 @@ required_apps = ["erpnext"]
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Sales Order": "public/js/sales_order.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -303,7 +303,10 @@ fixtures = [
 	{"dt": "Property Setter", "filters": [["doc_type", "=", "Sales Order"], ["field_name", "=", "naming_series"]]},
 	{"dt": "Report", "filters": [["name", "=", "Estimated vs Actual"]]},
 	{"dt": "Operation", "filters": [["name", "in", ["CTP", "Press", "Lamination", "Foiling", "Embossing", "UV Coating", "Die-cut", "Gluing"]]]},
-	{"dt": "Workstation", "filters": [["name", "in", ["CTP", "Laminator", "Die-Cutter", "Gluer"]]]},
+	{"dt": "Workstation", "filters": [["name", "in", [
+		"CTP", "Heidelberg SM74", "Golden Arrow Offset",
+		"Laminator", "Die-Cutter", "Gluer",
+	]]]},
 	{"dt": "Stock Entry Type", "filters": [["is_standard", "=", 1]]},
 	"Manufacturing Settings",
 	{"dt": "Number Card", "filters": [["name", "in", ["Open Enquiries", "Estimates Pending", "Quotes Awaiting Approval", "Jobs in Production", "Jobs Due This Week", "Overdue Jobs"]]]},

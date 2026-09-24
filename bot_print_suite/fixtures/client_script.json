@@ -3,7 +3,7 @@
   "docstatus": 0,
   "doctype": "Client Script",
   "dt": "Sales Order",
-  "enabled": 1,
+  "enabled": 0,
   "modified": "2026-07-25 20:51:54.684200",
   "module": null,
   "name": "Job Tracker Strip",
