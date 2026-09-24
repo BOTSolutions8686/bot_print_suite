@@ -51,6 +51,67 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 			for row in estimate.applied_cost_drivers
 		))
 
+		# The simple finishing controls must drive the real estimate, not
+		# merely record labels that disagree with the Cost Items table.
+		die_row = next(row for row in estimate.applied_cost_drivers
+			if "die" in row.cost_driver.lower() or "frame" in row.cost_driver.lower())
+		glue_row = next(row for row in estimate.applied_cost_drivers
+			if "glue" in row.cost_driver.lower())
+		original_die_cost = die_row.computed_cost
+		original_glue_cost = glue_row.computed_cost
+		original_subtotal = estimate.subtotal
+
+		estimate.die_requirement = "Use existing die"
+		estimate.save()
+		die_row = next(row for row in estimate.applied_cost_drivers
+			if "die" in row.cost_driver.lower() or "frame" in row.cost_driver.lower())
+		self.assertEqual(die_row.computed_cost, 0)
+		self.assertAlmostEqual(estimate.subtotal, original_subtotal - original_die_cost, places=2)
+
+		estimate.die_requirement = "New die required"
+		estimate.save()
+		die_row = next(row for row in estimate.applied_cost_drivers
+			if "die" in row.cost_driver.lower() or "frame" in row.cost_driver.lower())
+		self.assertAlmostEqual(die_row.computed_cost, original_die_cost, places=2)
+
+		estimate.glue_sides = 0
+		estimate.save()
+		glue_row = next(row for row in estimate.applied_cost_drivers
+			if "glue" in row.cost_driver.lower())
+		self.assertFalse(glue_row.enabled)
+		self.assertEqual(glue_row.computed_cost, 0)
+		self.assertAlmostEqual(estimate.subtotal, original_subtotal - original_glue_cost, places=2)
+
+		estimate.glue_sides = 1
+		estimate.save()
+		glue_row = next(row for row in estimate.applied_cost_drivers
+			if "glue" in row.cost_driver.lower())
+		self.assertTrue(glue_row.enabled)
+		self.assertAlmostEqual(glue_row.computed_cost, original_glue_cost, places=2)
+
+		# No unverified multi-side formula: a confirmed total is required
+		# through the same native row override available to estimators.
+		estimate.glue_sides = 2
+		with self.assertRaises(frappe.ValidationError):
+			estimate.save()
+		estimate.reload()
+		estimate.glue_sides = 2
+		glue_row = next(row for row in estimate.applied_cost_drivers
+			if "glue" in row.cost_driver.lower())
+		glue_row.cost_override_enabled = 1
+		glue_row.cost_override = original_glue_cost + 100
+		glue_row.override_reason = "Confirmed two-side test price"
+		estimate.save()
+		self.assertAlmostEqual(glue_row.computed_cost, original_glue_cost + 100, places=2)
+
+		# Restore the ordinary verified one-side case before continuing the
+		# quotation-to-production workflow below.
+		estimate.glue_sides = 1
+		glue_row.cost_override_enabled = 0
+		glue_row.cost_override = 0
+		glue_row.override_reason = None
+		estimate.save()
+
 		quotation_name = estimate.create_quotation()
 		quotation = frappe.get_doc("Quotation", quotation_name)
 		quotation = apply_workflow(quotation, "Submit for Approval")
