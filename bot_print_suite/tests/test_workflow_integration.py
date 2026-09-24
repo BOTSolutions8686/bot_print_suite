@@ -254,17 +254,22 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		self.assertTrue(production_again["already_started"])
 		self.assertEqual(production_again["work_order"], production["work_order"])
 		self.assertEqual(
-			production_again["material_transfer"], production["material_transfer"]
+			production_again["material_request"], production["material_request"]
 		)
 		work_order = frappe.get_doc("Work Order", production["work_order"])
-		material_transfer = frappe.get_doc("Stock Entry", production["material_transfer"])
 		bom = frappe.get_doc("BOM", work_order.bom_no)
 
-		self.assertEqual(work_order.docstatus, 1)
+		# Operational documents remain draft until a person reviews them.
+		self.assertEqual(work_order.docstatus, 0)
 		self.assertEqual(work_order.sales_order, sales_order.name)
 		self.assertEqual(work_order.production_item, sales_order.items[0].item_code)
 		self.assertEqual(bom.item, sales_order.items[0].item_code)
-		self.assertEqual(material_transfer.docstatus, 0)
-		self.assertEqual(material_transfer.work_order, work_order.name)
+		self.assertAlmostEqual(bom.total_cost, estimate.subtotal, places=2)
+		self.assertAlmostEqual(production["cost_variance"], 0, places=2)
+		self.assertIsNone(production["material_transfer"])
+		if production["material_request"]:
+			material_request = frappe.get_doc("Material Request", production["material_request"])
+			self.assertEqual(material_request.docstatus, 0)
+			self.assertTrue(all(row.sales_order == sales_order.name for row in material_request.items))
 		sales_order.reload()
 		self.assertEqual(sales_order.items[0].item_code, quotation.items[0].item_code)

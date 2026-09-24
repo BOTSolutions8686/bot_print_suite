@@ -68,9 +68,24 @@ function add_print_job_action(frm) {
 				freeze_message: __("Preparing the print job..."),
 				callback(r) {
 					if (!r.message) return;
+					const data = r.message;
+					const link = (doctype, name) => name
+						? `<a href="/app/${doctype}/${encodeURIComponent(name)}"><b>${name}</b></a>`
+						: "-";
+					let next_step;
+					if (data.work_order_status === 0) {
+						next_step = `${__("Approval needed: a production supervisor must review and submit the draft Work Order.")}<br>${__("مطلوب اعتماد: يجب على مشرف الإنتاج مراجعة أمر العمل واعتماده.")}`;
+						if (data.material_request) {
+							next_step += `<br><br>${__("Materials are short. Purchasing must review this draft request:")} ${link("material-request", data.material_request)}<br>${__("المواد ناقصة. يجب على المشتريات مراجعة طلب المواد المسودة.")}`;
+						}
+					} else if (data.material_request && !data.material_transfer) {
+						next_step = `${__("Materials are short. Review the purchase request and receive the stock before transfer.")}<br>${__("المواد ناقصة. راجع طلب الشراء واستلم المواد قبل التحويل.")}<br>${__("Purchase Request")}: ${link("material-request", data.material_request)}`;
+					} else {
+						next_step = `${__("Materials are available. Review and submit the draft material transfer.")}<br>${__("المواد متاحة. راجع مسودة تحويل المواد ثم اعتمدها.")}<br>${__("Material Transfer")}: ${link("stock-entry", data.material_transfer)}`;
+					}
 					frappe.msgprint({
-						title: r.message.already_started ? __("Print Job Already Started") : __("Print Job Started"),
-						message: `${__("Work Order")}: ${r.message.work_order}<br>${__("Material Transfer")}: ${r.message.material_transfer || __("Not created")}`,
+						title: data.already_started ? __("Print Job Status / حالة أمر الطباعة") : __("Print Job Prepared / تم تجهيز أمر الطباعة"),
+						message: `${__("Work Order")}: ${link("work-order", data.work_order)}<br>${__("BOM")}: ${link("bom", data.bom)}<br>${__("Planned manufacturing cost")}: ${format_currency(data.planned_bom_cost, frm.doc.currency)}<br>${__("Estimate cost")}: ${format_currency(data.estimate_cost, frm.doc.currency)}<hr>${next_step}`,
 						indicator: "green",
 					});
 					frm.reload_doc();

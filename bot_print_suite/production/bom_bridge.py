@@ -12,6 +12,8 @@ so this bridge never mutates submitted commercial documents.
 """
 
 import frappe
+from frappe.utils import flt
+from bot_print_suite.estimation.engine import compute_plates
 
 _PAPER_ITEM_GROUP = "Raw Material"
 _PLATE_ITEM_CODE = "PLATE-STD"
@@ -21,10 +23,11 @@ _PLATE_ITEM_CODE = "PLATE-STD"
 # ops sharing "Laminator" is a simplification for now, not a real routing
 # engine - fine for Phase 1, worth revisiting if a client's shop floor
 # actually separates these onto distinct machines.
-_CANONICAL_FINISHING_ORDER = ["Lamination", "Foiling", "Embossing", "UV Coating", "Die-cut", "Gluing"]
+_CANONICAL_FINISHING_ORDER = ["Lamination", "Foiling", "Embossing", "UV Coating", "Die-cut", "Gluing", "Packing"]
 _FINISHING_WORKSTATION = {
 	"Lamination": "Laminator", "Foiling": "Laminator", "Embossing": "Laminator",
 	"UV Coating": "Laminator", "Die-cut": "Die-Cutter", "Gluing": "Gluer",
+	"Packing": "Packing",
 }
 _COST_DRIVER_TO_FINISHING = {
 	"lamination": "Lamination",
@@ -34,8 +37,10 @@ _COST_DRIVER_TO_FINISHING = {
 	"die": "Die-cut",
 	"cutting": "Die-cut",
 	"glue": "Gluing",
+	"pack": "Packing",
 }
-_PLACEHOLDER_OP_MINUTES = 30
+
+_NON_OPERATION_DRIVERS = ("paper", "plate")
 
 
 def get_estimate_for_sales_order(sales_order_name):
@@ -81,6 +86,68 @@ def _get_or_create_plate_item():
 			"is_stock_item": 1,
 		}).insert(ignore_permissions=True)
 	return _PLATE_ITEM_CODE
+
+
+def _set_planned_buying_rate(item_code, rate):
+	"""Store the estimate's planned raw-material rate in Standard Buying."""
+	price_list = "Standard Buying"
+	name = frappe.db.get_value("Item Price", {"item_code": item_code, "price_list": price_list}, "name")
+	if name:
+		frappe.db.set_value("Item Price", name, "price_list_rate", flt(rate))
+	else:
+		frappe.get_doc({
+			"doctype": "Item Price", "item_code": item_code,
+			"price_list": price_list, "price_list_rate": flt(rate), "buying": 1,
+		}).insert(ignore_permissions=True)
+
+
+def _ensure_bom_rate_precision():
+	"""Paper is priced per sheet, so two-decimal BOM rates distort large runs."""
+	filters = {
+		"doc_type": "BOM Item", "field_name": "rate", "property": "precision",
+	}
+	if not frappe.db.exists("Property Setter", filters):
+		frappe.get_doc({
+			"doctype": "Property Setter",
+			"doctype_or_field": "DocField",
+			"doc_type": "BOM Item",
+			"field_name": "rate",
+			"property": "precision",
+			"value": "4",
+			"property_type": "Int",
+		}).insert(ignore_permissions=True)
+		frappe.clear_cache(doctype="BOM Item")
+
+
+def _ensure_operation_and_workstation(operation, workstation):
+	if not frappe.db.exists("Operation", operation):
+		frappe.get_doc({"doctype": "Operation", "name": operation, "description": operation}).insert(ignore_permissions=True)
+	if not frappe.db.exists("Workstation", workstation):
+		frappe.get_doc({"doctype": "Workstation", "workstation_name": workstation, "production_capacity": 1}).insert(ignore_permissions=True)
+
+
+def _planned_operation_costs(est):
+	"""Map estimate cost rows to the physical BOM operation that incurs them."""
+	costs = {"CTP": 0.0, "Press": 0.0}
+	for row in est.get("applied_cost_drivers") or []:
+		if not row.enabled:
+			continue
+		name = (row.cost_driver or "").lower()
+		if any(keyword in name for keyword in _NON_OPERATION_DRIVERS):
+			continue
+		operation = None
+		if "artwork" in name:
+			operation = "CTP"
+		elif "printing" in name or "press" in name:
+			operation = "Press"
+		else:
+			for keyword, candidate in _COST_DRIVER_TO_FINISHING.items():
+				if keyword in name:
+					operation = candidate
+					break
+		if operation:
+			costs[operation] = flt(costs.get(operation)) + flt(row.computed_cost)
+	return costs
 
 
 def _derive_operations(est):
@@ -135,25 +202,67 @@ def create_job_bom(sales_order_name):
 		)
 	paper_item = _get_or_create_paper_item(est)
 	plate_item = _get_or_create_plate_item()
+	_ensure_bom_rate_precision()
+	plate_count = compute_plates(est.colours_front, est.colours_back, "Sheetwise")
+	plate_cost = next((flt(row.computed_cost) for row in est.applied_cost_drivers
+		if row.enabled and "plate" in (row.cost_driver or "").lower()), 0)
+	paper_rate = flt(est.paper_cost) / flt(est.sheets_required)
+	_set_planned_buying_rate(paper_item, paper_rate)
+	if plate_count:
+		plate_rate = plate_cost / plate_count
+		_set_planned_buying_rate(plate_item, plate_rate)
+	planned_operation_costs = _planned_operation_costs(est)
 
 	bom = frappe.new_doc("BOM")
 	bom.item = production_item
 	bom.quantity = est.quantity
 	bom.company = so.company
+	bom.rm_cost_as_per = "Price List"
+	bom.buying_price_list = "Standard Buying"
 	bom.append("items", {"item_code": paper_item, "qty": est.sheets_required, "uom": "Nos"})
-	if est.plates_count:
-		bom.append("items", {"item_code": plate_item, "qty": est.plates_count, "uom": "Nos"})
+	if plate_count:
+		bom.append("items", {"item_code": plate_item, "qty": plate_count, "uom": "Nos"})
 
 	bom.with_operations = 1
 	for operation, workstation in _derive_operations(est):
-		hour_rate = frappe.db.get_value("Workstation", workstation, "hour_rate") or 0
+		_ensure_operation_and_workstation(operation, workstation)
+		hour_rate = flt(planned_operation_costs.get(operation))
 		bom.append("operations", {
 			"operation": operation, "workstation": workstation,
-			"time_in_mins": _PLACEHOLDER_OP_MINUTES, "hour_rate": hour_rate,
+			"time_in_mins": 60, "hour_rate": hour_rate, "fixed_time": 1,
 		})
 
 	bom.insert(ignore_permissions=True)
 	bom.submit()
+	_reconcile_material_amounts(bom, paper_item, flt(est.paper_cost), plate_item, plate_cost)
 
 	frappe.db.set_value("Sales Order", sales_order_name, "custom_job_status", "Prepress")
 	return bom.name
+
+
+def _reconcile_material_amounts(bom, paper_item, paper_cost, plate_item, plate_cost):
+	"""Keep planned paper/plate totals exact despite Currency-rate rounding.
+
+	ERPNext rounds a BOM Item's unit rate before multiplying very large sheet
+	quantities.  The quantity must stay exact for purchasing and stock transfer,
+	so we persist the approved estimate amount on the planning BOM instead of
+	moving the rounding difference into an unrelated operation.
+	"""
+	conversion_rate = flt(bom.conversion_rate) or 1
+	planned = {paper_item: paper_cost, plate_item: plate_cost}
+	material_total = 0
+	for row in bom.items:
+		amount = flt(planned.get(row.item_code, row.amount))
+		material_total += amount
+		frappe.db.set_value("BOM Item", row.name, {
+			"amount": amount,
+			"base_amount": amount * conversion_rate,
+		}, update_modified=False)
+	total_cost = material_total + flt(bom.operating_cost) - flt(bom.secondary_items_cost)
+	frappe.db.set_value("BOM", bom.name, {
+		"raw_material_cost": material_total,
+		"base_raw_material_cost": material_total * conversion_rate,
+		"total_cost": total_cost,
+		"base_total_cost": total_cost * conversion_rate,
+	}, update_modified=False)
+	bom.reload()
