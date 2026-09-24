@@ -41,6 +41,7 @@ _CUTTING_LIKE_KEYWORDS = ("cutting",)
 _PRINTING_LIKE_KEYWORDS = ("printing",)
 
 _GLUE_LIKE_KEYWORDS = ("glue", "gluing")
+_LAMINATION_LIKE_KEYWORDS = ("lamination", "laminating")
 
 
 def sync_glue_configuration(doc):
@@ -69,6 +70,25 @@ def sync_glue_configuration(doc):
 			doc.glue_sides = 0
 
 
+def sync_lamination_configuration(doc):
+	"""Keep the simple Lamination checkbox and detailed cost row aligned."""
+	lamination_rows = [
+		row for row in (doc.get("applied_cost_drivers") or [])
+		if any(keyword in (row.cost_driver or "").lower()
+			for keyword in _LAMINATION_LIKE_KEYWORDS)
+	]
+	if not lamination_rows:
+		doc.lamination_required = 0
+		return
+
+	checkbox_changed = not doc.is_new() and doc.has_value_changed("lamination_required")
+	if checkbox_changed:
+		for row in lamination_rows:
+			row.enabled = 1 if doc.lamination_required else 0
+	else:
+		doc.lamination_required = 1 if any(row.enabled for row in lamination_rows) else 0
+
+
 
 def apply_template(doc):
 	"""Populates applied_cost_drivers from doc.product_template's driver
@@ -86,6 +106,7 @@ def apply_template(doc):
 			"enabled": 1 if line.default_enabled else 0,
 		})
 	sync_glue_configuration(doc)
+	sync_lamination_configuration(doc)
 
 
 def compute_driver_costs(doc):

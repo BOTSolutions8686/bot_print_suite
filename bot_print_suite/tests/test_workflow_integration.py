@@ -115,6 +115,45 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 			if "glue" in row.cost_driver.lower())
 		self.assertFalse(glue_row.cost_override_enabled)
 
+		# The convenient checkbox and native Lamination row work in both
+		# directions and feed the actual estimate total.
+		lamination_row = next(row for row in estimate.applied_cost_drivers
+			if "lamination" in row.cost_driver.lower())
+		self.assertFalse(estimate.lamination_required)
+		self.assertFalse(lamination_row.enabled)
+		estimate.lamination_required = 1
+		estimate.save()
+		lamination_row = next(row for row in estimate.applied_cost_drivers
+			if "lamination" in row.cost_driver.lower())
+		self.assertTrue(lamination_row.enabled)
+		self.assertGreater(lamination_row.computed_cost, 0)
+		estimate.lamination_required = 0
+		estimate.save()
+		lamination_row = next(row for row in estimate.applied_cost_drivers
+			if "lamination" in row.cost_driver.lower())
+		self.assertFalse(lamination_row.enabled)
+		self.assertEqual(lamination_row.computed_cost, 0)
+
+		# Every cost row's native override must replace the calculated value,
+		# including a deliberate override of exactly zero.
+		artwork_row = next(row for row in estimate.applied_cost_drivers
+			if "artwork" in row.cost_driver.lower())
+		original_artwork_cost = artwork_row.computed_cost
+		artwork_row.cost_override_enabled = 1
+		artwork_row.cost_override = 0
+		artwork_row.override_reason = "Regression test: deliberate zero"
+		estimate.save()
+		self.assertEqual(artwork_row.computed_cost, 0)
+		artwork_row.cost_override = original_artwork_cost + 100
+		artwork_row.override_reason = "Regression test: confirmed custom amount"
+		estimate.save()
+		self.assertAlmostEqual(artwork_row.computed_cost, original_artwork_cost + 100, places=2)
+		artwork_row.cost_override_enabled = 0
+		artwork_row.cost_override = 0
+		artwork_row.override_reason = None
+		estimate.save()
+		self.assertAlmostEqual(artwork_row.computed_cost, original_artwork_cost, places=2)
+
 		quotation_name = estimate.create_quotation()
 		quotation = frappe.get_doc("Quotation", quotation_name)
 		quotation = apply_workflow(quotation, "Submit for Approval")
