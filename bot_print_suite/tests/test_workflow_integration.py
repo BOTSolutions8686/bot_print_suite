@@ -40,6 +40,7 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 			"press": "Heidelberg SM74",
 			"die_width_cm": 20,
 			"die_height_cm": 10,
+			"die_requirement": "New die required",
 		})
 		estimate.save()
 		self.assertGreater(estimate.sell_price, 0)
