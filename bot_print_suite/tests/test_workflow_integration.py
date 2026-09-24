@@ -263,6 +263,7 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		self.assertEqual(work_order.docstatus, 0)
 		self.assertEqual(work_order.sales_order, sales_order.name)
 		self.assertEqual(work_order.production_item, sales_order.items[0].item_code)
+		self.assertTrue(all(row.source_warehouse for row in work_order.required_items))
 		self.assertEqual(bom.item, sales_order.items[0].item_code)
 		self.assertAlmostEqual(bom.total_cost, estimate.subtotal, places=2)
 		self.assertAlmostEqual(production["cost_variance"], 0, places=2)

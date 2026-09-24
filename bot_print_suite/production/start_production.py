@@ -72,6 +72,7 @@ def start_production(sales_order_name):
 	work_order.sales_order = so.name
 	work_order.planned_start_date = frappe.utils.now_datetime()
 	abbr = frappe.db.get_value("Company", so.company, "abbr")
+	work_order.source_warehouse = f"Stores - {abbr}"
 	work_order.wip_warehouse = f"Work In Progress - {abbr}"
 	work_order.fg_warehouse = f"Finished Goods - {abbr}"
 	work_order.insert(ignore_permissions=True)  # validate hook fires here
