@@ -16,6 +16,7 @@ def make_quotation(estimate_name, qty=None):
 	est.check_permission("read")
 	_require_permission("Quotation", "create")
 	qty = frappe.utils.cint(qty) if qty else est.quantity
+	_ensure_sales_rate_precision()
 
 	if qty == est.quantity:
 		sell_price = est.sell_price
@@ -53,6 +54,30 @@ def make_quotation(estimate_name, qty=None):
 	})
 	quotation.set_taxes()
 	return quotation
+
+
+def _ensure_sales_rate_precision():
+	"""Keep fractional per-piece print prices from changing the agreed job total."""
+	for child_doctype in (
+		"Quotation Item", "Sales Order Item", "Delivery Note Item", "Sales Invoice Item",
+	):
+		filters = {
+			"doc_type": child_doctype, "field_name": "rate", "property": "precision",
+		}
+		name = frappe.db.get_value("Property Setter", filters, "name")
+		if not name:
+			frappe.get_doc({
+				"doctype": "Property Setter",
+				"doctype_or_field": "DocField",
+				"doc_type": child_doctype,
+				"field_name": "rate",
+				"property": "precision",
+				"value": "8",
+				"property_type": "Int",
+			}).insert(ignore_permissions=True)
+		elif frappe.db.get_value("Property Setter", name, "value") != "8":
+			frappe.db.set_value("Property Setter", name, "value", "8")
+		frappe.clear_cache(doctype=child_doctype)
 
 
 def _customer_description(est, qty):
