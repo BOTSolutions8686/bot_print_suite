@@ -8,3 +8,4 @@ bot_print_suite.patches.backfill_packing_cost
 bot_print_suite.patches.add_cost_driver_calculation_roles
 bot_print_suite.patches.backfill_packing_override_flag
 bot_print_suite.patches.setup_standard_vat
+bot_print_suite.patches.disable_legacy_job_order_actions

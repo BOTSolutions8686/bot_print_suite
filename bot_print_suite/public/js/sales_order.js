@@ -17,6 +17,10 @@ frappe.ui.form.on("Sales Order", {
 			render_new_order_tracker(frm);
 			return;
 		}
+		if (frm.doc.docstatus === 1) {
+			add_artwork_action(frm);
+			add_print_job_action(frm);
+		}
 
 		frappe.call({
 			method: "bot_print_suite.production.job_tracker.get_job_tracker_data",
@@ -25,6 +29,76 @@ frappe.ui.form.on("Sales Order", {
 				if (r.message) render_job_tracker(frm, r.message);
 			},
 		});
+	},
+});
+
+function add_artwork_action(frm) {
+	frm.add_custom_button(__("Review / Upload Artwork"), () => {
+		frappe.call({
+			method: "bot_print_suite.production.artwork.get_or_create_job_artwork",
+			args: { sales_order_name: frm.doc.name },
+			freeze: true,
+			freeze_message: __("Preparing artwork review..."),
+			callback(r) {
+				if (r.message) frappe.set_route("Form", "Job Artwork", r.message);
+			},
+		});
+	}, __("Artwork"));
+}
+
+function add_print_job_action(frm) {
+	const is_print_job = Boolean(frm.doc.custom_print_estimate)
+		|| (frm.doc.items || []).some((row) => row.prevdoc_docname);
+	if (!is_print_job) return;
+
+	// The guided action performs the same manufacturing setup safely. Hiding
+	// the generic shortcuts keeps first-time users on the approved workflow.
+	setTimeout(() => {
+		frm.remove_custom_button(__("Work Order"), __("Create"));
+		frm.remove_custom_button(__("Production Plan"), __("Create"));
+	}, 300);
+
+	frm.add_custom_button(__("Start Print Job"), () => {
+		frappe.confirm(
+			__("This starts production after artwork approval and prepares the Work Order and material transfer. Continue?"),
+			() => frappe.call({
+				method: "bot_print_suite.production.start_production.start_production",
+				args: { sales_order_name: frm.doc.name },
+				freeze: true,
+				freeze_message: __("Preparing the print job..."),
+				callback(r) {
+					if (!r.message) return;
+					frappe.msgprint({
+						title: r.message.already_started ? __("Print Job Already Started") : __("Print Job Started"),
+						message: `${__("Work Order")}: ${r.message.work_order}<br>${__("Material Transfer")}: ${r.message.material_transfer || __("Not created")}`,
+						indicator: "green",
+					});
+					frm.reload_doc();
+				},
+			}),
+		);
+	}, __("Create"));
+}
+
+frappe.ui.form.on("Quotation", {
+	refresh(frm) {
+		if (frm.is_new()) return;
+
+		frm.add_custom_button(__("Attach Customer Artwork"), () => {
+			new frappe.ui.FileUploader({
+				doctype: frm.doctype,
+				docname: frm.docname,
+				fieldname: "custom_customer_artwork",
+				folder: "Home/Attachments",
+				on_success(file_doc) {
+					frm.attachments.attachment_uploaded(file_doc);
+					frappe.show_alert({
+						message: __("Customer artwork attached. It is not yet approved for production."),
+						indicator: "green",
+					});
+				},
+			});
+		}, __("Artwork"));
 	},
 });
 

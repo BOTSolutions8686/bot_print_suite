@@ -47,7 +47,7 @@ required_apps = ["erpnext"]
 # when the form is reached through a mapped document.  Keep the Sales Order
 # helper available on Desk as well; the script itself only registers handlers
 # for Sales Order.
-app_include_js = ["/assets/bot_print_suite/js/sales_order.js"]
+app_include_js = ["/assets/bot_print_suite/js/sales_order.js?v=20260924-artwork-flow-2"]
 doctype_js = {"Print Estimate": "client_scripts/print_estimate.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}

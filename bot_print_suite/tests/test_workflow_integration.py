@@ -6,6 +6,7 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, nowdate
 
 from bot_print_suite.production.start_production import start_production
+from bot_print_suite.production.artwork import get_or_create_job_artwork
 from erpnext.selling.doctype.quotation.quotation import make_sales_order
 
 
@@ -213,6 +214,15 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 			quotation.grand_total, quotation.net_total * 1.15, delta=1)
 		self.assertTrue(quotation.items[0].item_code.startswith("JOB-"))
 		self.assertFalse(quotation.items[0].item_code.startswith("PRINT-JOB-"))
+		frappe.get_doc({
+			"doctype": "File",
+			"file_name": "test-artwork.txt",
+			"content": b"test artwork",
+			"is_private": 1,
+			"attached_to_doctype": "Quotation",
+			"attached_to_name": quotation.name,
+			"attached_to_field": "custom_customer_artwork",
+		}).insert()
 
 		sales_order = make_sales_order(quotation.name)
 		sales_order.delivery_date = add_days(nowdate(), 7)
@@ -225,12 +235,10 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		with self.assertRaises(frappe.ValidationError):
 			start_production(sales_order.name)
 
-		artwork = frappe.get_doc({
-			"doctype": "Job Artwork",
-			"sales_order": sales_order.name,
-			"version_no": 1,
-			"artwork_file": "/private/files/test-artwork.pdf",
-		}).insert()
+		artwork_name = get_or_create_job_artwork(sales_order.name)
+		self.assertEqual(get_or_create_job_artwork(sales_order.name), artwork_name)
+		artwork = frappe.get_doc("Job Artwork", artwork_name)
+		self.assertTrue(artwork.artwork_file.endswith("test-artwork.txt"))
 		artwork = apply_workflow(artwork, "Send to Customer")
 		artwork = apply_workflow(artwork, "Approve")
 		self.assertEqual(artwork.status, "Approved")
