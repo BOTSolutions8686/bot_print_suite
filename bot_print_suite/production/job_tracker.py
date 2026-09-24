@@ -65,12 +65,14 @@ def get_job_tracker_data(sales_order):
 	artwork_approved = artwork_status == "Approved"
 
 	has_submitted_wo = bool(frappe.db.exists("Work Order", {"sales_order": sales_order, "docstatus": 1}))
+	has_completed_wo = bool(frappe.db.exists(
+		"Work Order", {"sales_order": sales_order, "docstatus": 1, "status": "Completed"}))
 	has_submitted_dn = bool(frappe.db.exists(
 		"Delivery Note Item", {"against_sales_order": sales_order, "docstatus": 1}))
 	has_submitted_si = bool(frappe.db.exists(
 		"Sales Invoice Item", {"sales_order": sales_order, "docstatus": 1}))
 
-	completed = [True, True, True, quotation_approved, artwork_approved, has_submitted_dn, has_submitted_dn, has_submitted_si]
+	completed = [True, True, True, quotation_approved, artwork_approved, has_completed_wo, has_submitted_dn, has_submitted_si]
 
 	if not quotation_approved:
 		current_index, status_line = 3, "Awaiting approval"
@@ -83,9 +85,11 @@ def get_job_tracker_data(sales_order):
 		}.get(artwork_status, "Artwork pending")
 	elif not has_submitted_wo:
 		current_index, status_line = 5, "Ready for production"
-	elif not has_submitted_dn:
+	elif not has_completed_wo:
 		current_index = 5
 		status_line = so.custom_job_status or "In production"
+	elif not has_submitted_dn:
+		current_index, status_line = 6, "Production complete — ready for delivery"
 	elif not has_submitted_si:
 		current_index, status_line = 6, "Out for delivery"
 	else:
