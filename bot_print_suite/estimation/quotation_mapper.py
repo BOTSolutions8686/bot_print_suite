@@ -1,6 +1,7 @@
 import frappe
 from frappe.utils import flt
 from frappe.model.mapper import get_mapped_doc
+from bot_print_suite.setup.vat import ensure_standard_vat_template
 
 
 @frappe.whitelist()
@@ -34,6 +35,7 @@ def make_quotation(estimate_name, qty=None):
 	quotation.price_list_currency = "SAR"
 	quotation.plc_conversion_rate = 1
 	quotation.custom_print_estimate = est.name
+	quotation.taxes_and_charges = ensure_standard_vat_template(quotation.company)
 	# sell_price is the TOTAL price for the whole job/batch (that's what the
 	# estimate computes and what the estimator/customer actually sees and
 	# agrees to). ERPNext's Quotation Item does qty x rate = amount, so rate
@@ -49,6 +51,7 @@ def make_quotation(estimate_name, qty=None):
 		"rate": per_unit_rate,
 		"description": _customer_description(est, qty),
 	})
+	quotation.set_taxes()
 	return quotation
 
 

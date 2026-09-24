@@ -205,7 +205,12 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		self.assertEqual(quotation.custom_print_estimate, estimate.name)
 		# ERPNext stores the per-unit Currency rate at site precision, so a
 		# batch total can differ by a few halalas after qty × rounded rate.
-		self.assertAlmostEqual(quotation.grand_total, estimate.sell_price, delta=1)
+		self.assertEqual(quotation.taxes_and_charges, "Standard VAT 15% - GAP")
+		self.assertEqual(len(quotation.taxes), 1)
+		self.assertEqual(quotation.taxes[0].rate, 15)
+		self.assertAlmostEqual(quotation.net_total, estimate.sell_price, delta=1)
+		self.assertAlmostEqual(
+			quotation.grand_total, quotation.net_total * 1.15, delta=1)
 		self.assertTrue(quotation.items[0].item_code.startswith("JOB-"))
 		self.assertFalse(quotation.items[0].item_code.startswith("PRINT-JOB-"))
 
