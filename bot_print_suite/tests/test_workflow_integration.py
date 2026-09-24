@@ -89,28 +89,31 @@ class TestPrintWorkflowIntegration(IntegrationTestCase):
 		self.assertTrue(glue_row.enabled)
 		self.assertAlmostEqual(glue_row.computed_cost, original_glue_cost, places=2)
 
-		# No unverified multi-side formula: a confirmed total is required
-		# through the same native row override available to estimators.
+		# Multi-side glue uses the normal tiered one-side result multiplied
+		# by sides. The native row override remains available for exceptions.
 		estimate.glue_sides = 2
-		with self.assertRaises(frappe.ValidationError):
-			estimate.save()
-		estimate.reload()
-		estimate.glue_sides = 2
-		estimate.multi_side_glue_cost = original_glue_cost + 100
 		estimate.save()
 		glue_row = next(row for row in estimate.applied_cost_drivers
 			if "glue" in row.cost_driver.lower())
-		self.assertTrue(glue_row.cost_override_enabled)
+		self.assertFalse(glue_row.cost_override_enabled)
+		self.assertAlmostEqual(glue_row.computed_cost, original_glue_cost * 2, places=2)
+
+		glue_row.cost_override_enabled = 1
+		glue_row.cost_override = original_glue_cost + 100
+		glue_row.override_reason = "Confirmed exception to normal side multiplier"
+		estimate.save()
 		self.assertAlmostEqual(glue_row.computed_cost, original_glue_cost + 100, places=2)
 
 		# Restore the ordinary verified one-side case before continuing the
 		# quotation-to-production workflow below.
 		estimate.glue_sides = 1
+		glue_row.cost_override_enabled = 0
+		glue_row.cost_override = 0
+		glue_row.override_reason = None
 		estimate.save()
 		glue_row = next(row for row in estimate.applied_cost_drivers
 			if "glue" in row.cost_driver.lower())
 		self.assertFalse(glue_row.cost_override_enabled)
-		self.assertEqual(estimate.multi_side_glue_cost, 0)
 
 		quotation_name = estimate.create_quotation()
 		quotation = frappe.get_doc("Quotation", quotation_name)

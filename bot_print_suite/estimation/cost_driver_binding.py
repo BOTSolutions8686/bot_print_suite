@@ -41,17 +41,14 @@ _CUTTING_LIKE_KEYWORDS = ("cutting",)
 _PRINTING_LIKE_KEYWORDS = ("printing",)
 
 _GLUE_LIKE_KEYWORDS = ("glue", "gluing")
-_MULTI_SIDE_OVERRIDE_REASON = "Confirmed total for multi-side gluing"
 
 
 def sync_glue_configuration(doc):
 	"""Keep the simple job-level glue choice and detailed cost row aligned.
 
-	The currently confirmed Golden Arrow pricing is for one-side gluing,
-	so this field is intentionally a yes/no choice. When the user changes
-	the checkbox it controls the glue cost row. Otherwise the row remains
-	the source of truth (important when a template is applied or a row is
-	changed directly in the native child table).
+	Zero sides disables the glue row; any positive count enables it. The
+	row remains the source of truth when a template is applied or a row is
+	changed directly in the native child table.
 	"""
 	glue_rows = [
 		row for row in (doc.get("applied_cost_drivers") or [])
@@ -71,37 +68,6 @@ def sync_glue_configuration(doc):
 		else:
 			doc.glue_sides = 0
 
-	sides = int(doc.glue_sides or 0)
-	if sides > 1:
-		confirmed_total = float(doc.get("multi_side_glue_cost") or 0)
-		if confirmed_total <= 0:
-			# Preserve an older manually entered Glue-row override by lifting
-			# it into the new, easier top-level field on the next save.
-			existing_override = next((
-				row for row in glue_rows if row.enabled and row.cost_override_enabled
-			), None)
-			if existing_override:
-				confirmed_total = float(existing_override.cost_override or 0)
-				doc.multi_side_glue_cost = confirmed_total
-		if confirmed_total <= 0:
-			frappe.throw(
-				"Enter Confirmed Total Glue Cost for gluing on two or more sides. "
-				"Only the one-side automatic rate has been verified."
-			)
-		for row in glue_rows:
-			if row.enabled:
-				row.cost_override_enabled = 1
-				row.cost_override = confirmed_total
-				row.override_reason = f"{_MULTI_SIDE_OVERRIDE_REASON} ({sides} sides)"
-	else:
-		doc.multi_side_glue_cost = 0
-		# Clear only overrides created by this helper. A deliberate manual
-		# row override for a one-side job remains untouched.
-		for row in glue_rows:
-			if (row.override_reason or "").startswith(_MULTI_SIDE_OVERRIDE_REASON):
-				row.cost_override_enabled = 0
-				row.cost_override = 0
-				row.override_reason = None
 
 
 def apply_template(doc):
@@ -172,6 +138,7 @@ def compute_driver_costs(doc):
 		is_die_like = any(k in driver.name.lower() for k in _DIE_LIKE_KEYWORDS)
 		is_cutting_like = any(k in driver.name.lower() for k in _CUTTING_LIKE_KEYWORDS)
 		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
+		is_glue_like = any(k in driver.name.lower() for k in _GLUE_LIKE_KEYWORDS)
 
 		# Die-reuse rule, confirmed directly by Golden Arrow's estimator:
 		# repeat customers don't pay for the die again on a reorder.
@@ -246,6 +213,8 @@ def compute_driver_costs(doc):
 		)
 		if is_cutting_like:
 			cost = cost / (doc.ups or 1)
+		if is_glue_like:
+			cost = cost * max(1, int(doc.glue_sides or 0))
 		row.computed_cost = round(cost, 2)
 		row.source = "Calculated"
 		total += cost
@@ -373,8 +342,11 @@ def _quantity_description(driver, doc):
 		return f"{cartons:,.1f} cartons"
 	if basis == "Per 1000 Pieces":
 		is_cutting_like = any(k in driver.name.lower() for k in _CUTTING_LIKE_KEYWORDS)
+		is_glue_like = any(k in driver.name.lower() for k in _GLUE_LIKE_KEYWORDS)
 		if is_cutting_like:
 			return f"{doc.quantity or 0:,} pieces \u00f7 {doc.ups or 1} ups"
+		if is_glue_like:
+			return f"{doc.quantity or 0:,} pieces \u00d7 {doc.glue_sides or 0} sides"
 		return f"{doc.quantity or 0:,} pieces"
 	return "-"
 
@@ -449,6 +421,7 @@ def _formula_description(driver, doc, row, computed_cost):
 			return f"{driver.rate:g} SAR/sheet \u00d7 {qty:,} sheets = {computed_cost:,.2f} SAR"
 		is_cutting_like = any(k in driver.name.lower() for k in _CUTTING_LIKE_KEYWORDS)
 		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
+		is_glue_like = any(k in driver.name.lower() for k in _GLUE_LIKE_KEYWORDS)
 		double_sided_note = ""
 		if is_printing_like and basis == "Per 1000 Sheets" and doc.get("double_sided"):
 			double_sided_note = f" ({doc.sheets_required or 0:,} sheets \u00d7 2, double-sided)"
@@ -464,6 +437,10 @@ def _formula_description(driver, doc, row, computed_cost):
 				fixed_part = f"{fixed:g} fixed + " if fixed else ""
 				return (f"({fixed_part}{qty:,} {unit} \u00f7 1000 \u00d7 {rate:g}) \u00f7 {ups} ups "
 					f"= {raw:,.2f} \u00f7 {ups} = {computed_cost:,.2f} SAR")
+			if is_glue_like:
+				sides = max(1, int(doc.glue_sides or 0))
+				return (f"({qty:,} {unit} \u00f7 1000 \u00d7 {rate:g}) \u00d7 {sides} sides "
+					f"= {raw:,.2f} \u00d7 {sides} = {computed_cost:,.2f} SAR")
 			if fixed:
 				return (f"{fixed:g} fixed + ({qty:,} {unit}{double_sided_note} \u00f7 1000 \u00d7 {rate:g}) "
 					f"= {fixed:g} + {variable_part:,.2f} = {computed_cost:,.2f} SAR")
