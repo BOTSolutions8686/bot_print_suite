@@ -87,6 +87,25 @@ function highlight_ups_override(frm) {
 		: { backgroundColor: '' });
 }
 
+// These two simple finishing inputs are convenience controls for rows in
+// the native Cost Items grid. Keep the row state visible immediately; the
+// server remains the single authority for rates and totals when the user saves.
+function sync_cost_row_enabled(frm, keyword, enabled) {
+	const row = (frm.doc.applied_cost_drivers || []).find(r =>
+		(r.cost_driver || '').toLowerCase().includes(keyword));
+	if (!row || Boolean(row.enabled) === Boolean(enabled)) return Promise.resolve();
+	return frappe.model.set_value(row.doctype, row.name, 'enabled', enabled ? 1 : 0)
+		.then(() => frm.refresh_field('applied_cost_drivers'));
+}
+
+function prompt_finishing_recalculation(frm) {
+	if (frm.is_new()) {
+		frappe.show_alert({message: __('Save the estimate to calculate costs.'), indicator: 'blue'});
+		return;
+	}
+	frappe.show_alert({message: __('Finishing changed — click Save to recalculate costs.'), indicator: 'orange'}, 7);
+}
+
 // Injected once per page load - Frappe has no clean "add doctype CSS"
 // hook for child table rows, so this is the standard escape hatch.
 if (!document.getElementById('cost-driver-override-style')) {
@@ -186,6 +205,24 @@ frappe.ui.form.on('Print Estimate', {
 	ups_override_enabled: function(frm) {
 		highlight_ups_override(frm);
 	},
+	glue_sides: function(frm) {
+		if (frm.__bps_syncing_finishing) return;
+		frm.__bps_syncing_finishing = true;
+		sync_cost_row_enabled(frm, 'glue', cint(frm.doc.glue_sides) > 0)
+			.finally(() => {
+				frm.__bps_syncing_finishing = false;
+				prompt_finishing_recalculation(frm);
+			});
+	},
+	lamination_required: function(frm) {
+		if (frm.__bps_syncing_finishing) return;
+		frm.__bps_syncing_finishing = true;
+		sync_cost_row_enabled(frm, 'lamination', Boolean(frm.doc.lamination_required))
+			.finally(() => {
+				frm.__bps_syncing_finishing = false;
+				prompt_finishing_recalculation(frm);
+			});
+	},
 });
 
 // Live row highlight the instant someone ticks the checkbox, without
@@ -195,5 +232,21 @@ frappe.ui.form.on('Print Estimate', {
 frappe.ui.form.on('Print Estimate Cost Driver Line', {
 	cost_override_enabled: function(frm) {
 		highlight_overridden_rows(frm);
+	},
+	enabled: function(frm, cdt, cdn) {
+		if (frm.__bps_syncing_finishing) return;
+		const row = locals[cdt][cdn];
+		const name = (row.cost_driver || '').toLowerCase();
+		frm.__bps_syncing_finishing = true;
+		let update = Promise.resolve();
+		if (name.includes('lamination')) {
+			update = frm.set_value('lamination_required', row.enabled ? 1 : 0);
+		} else if (name.includes('glue')) {
+			update = frm.set_value('glue_sides', row.enabled ? Math.max(1, cint(frm.doc.glue_sides)) : 0);
+		}
+		Promise.resolve(update).finally(() => {
+			frm.__bps_syncing_finishing = false;
+			prompt_finishing_recalculation(frm);
+		});
 	},
 });

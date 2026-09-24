@@ -48,6 +48,7 @@ required_apps = ["erpnext"]
 # helper available on Desk as well; the script itself only registers handlers
 # for Sales Order.
 app_include_js = ["/assets/bot_print_suite/js/sales_order.js"]
+doctype_js = {"Print Estimate": "client_scripts/print_estimate.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
