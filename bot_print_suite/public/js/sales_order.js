@@ -12,6 +12,27 @@ frappe.ui.form.on("Work Order", {
 	},
 });
 
+function default_print_operating_cost_account(frm) {
+	if (!frm.doc.work_order || (frm.doc.purpose !== "Manufacture" && frm.doc.stock_entry_type !== "Manufacture")) return;
+	const blank_rows = (frm.doc.additional_costs || []).filter((row) => !row.expense_account);
+	if (!blank_rows.length || !frm.doc.company) return;
+	frappe.db.get_value("Account", {
+		company: frm.doc.company,
+		account_type: "Expenses Included In Valuation",
+		is_group: 0,
+	}, "name").then((r) => {
+		const account = r.message?.name;
+		if (!account) return;
+		blank_rows.forEach((row) => frappe.model.set_value(row.doctype, row.name, "expense_account", account));
+		frm.refresh_field("additional_costs");
+	});
+}
+
+frappe.ui.form.on("Stock Entry", {
+	refresh: default_print_operating_cost_account,
+	work_order: default_print_operating_cost_account,
+});
+
 frappe.ui.form.on("Sales Order", {
 	onload(frm) {
 		// A Sales Order mapped from a Print Estimate is a production job, so

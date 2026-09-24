@@ -113,6 +113,30 @@ def block_production_without_approved_artwork(doc, method=None):
 		)
 
 
+def set_print_job_operating_cost_account(doc, method=None):
+	"""Put print-job manufacture overhead into finished-goods valuation."""
+	if (doc.get("purpose") != "Manufacture" and doc.get("stock_entry_type") != "Manufacture") or not doc.get("work_order"):
+		return
+	work_order = frappe.db.get_value("Work Order", doc.work_order, ["sales_order", "company"], as_dict=True)
+	if not work_order or not work_order.sales_order:
+		return
+	from bot_print_suite.production.bom_bridge import get_estimate_for_sales_order
+	if not get_estimate_for_sales_order(work_order.sales_order):
+		return
+	account = frappe.db.get_value("Account", {
+		"company": work_order.company,
+		"account_type": "Expenses Included In Valuation",
+		"is_group": 0,
+	}, "name")
+	if not account:
+		frappe.throw(
+			f"Create an Expenses Included In Valuation account for {work_order.company} before completing production."
+		)
+	for row in doc.get("additional_costs") or []:
+		if not row.expense_account:
+			row.expense_account = account
+
+
 def sync_job_status_from_job_card(doc, method=None):
 	"""on_update hook on Job Card - PLAN.md 4: rollup job_status across
 	Job Cards onto the Sales Order. Light rollup, not a state machine:

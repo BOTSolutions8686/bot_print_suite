@@ -47,7 +47,7 @@ required_apps = ["erpnext"]
 # when the form is reached through a mapped document.  Keep the Sales Order
 # helper available on Desk as well; the script itself only registers handlers
 # for Sales Order.
-app_include_js = ["/assets/bot_print_suite/js/sales_order.js?v=20260924-work-order-fix"]
+app_include_js = ["/assets/bot_print_suite/js/sales_order.js?v=20260924-operating-account"]
 doctype_js = {"Print Estimate": "client_scripts/print_estimate.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
@@ -164,6 +164,9 @@ doc_events = {
 	},
 	"Work Order": {
 		"validate": "bot_print_suite.utils.block_production_without_approved_artwork",
+	},
+	"Stock Entry": {
+		"before_validate": "bot_print_suite.utils.set_print_job_operating_cost_account",
 	},
 	"Job Card": {
 		"on_update": "bot_print_suite.utils.sync_job_status_from_job_card",
