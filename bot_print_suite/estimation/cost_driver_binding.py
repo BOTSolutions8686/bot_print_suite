@@ -449,20 +449,33 @@ def build_reconciliation_table(doc):
 		rows.append(("Freight (\u0627\u0644\u0634\u062d\u0646)", "-", "-", "-", doc.freight_cost,
 			f"Entered directly: {doc.freight_cost:,.2f} SAR"))
 
-	html = ["<div style='font-size:12px;'>",
-		"<table class='table table-bordered' style='margin-bottom:8px;'>",
-		"<thead><tr style='background:#F2F4F8;'>",
-		"<th>Item</th><th>Basis</th><th>Rate Used</th><th>Quantity</th><th style='text-align:right;'>Total (SAR)</th>",
+	cell = "padding:9px 10px;border-bottom:1px solid #e5e7eb;vertical-align:top;"
+	header = ("position:sticky;top:0;z-index:2;padding:9px 10px;text-align:left;"
+		"background:#f3f4f6;border-bottom:1px solid #d1d5db;white-space:nowrap;")
+	html = ["<div style='font-size:12px;overflow:auto;max-height:420px;"
+		"border:1px solid #dfe3e8;border-radius:8px;background:white;'>",
+		"<table style='width:100%;min-width:820px;border-collapse:separate;border-spacing:0;'>",
+		"<thead><tr style='color:#4b5563;'>",
+		f"<th style='{header}'>Cost item</th>"
+		f"<th style='{header}'>Basis</th>"
+		f"<th style='{header}'>Rate used</th>"
+		f"<th style='{header}'>Quantity</th>"
+		f"<th style='{header}text-align:right;'>Total (SAR)</th>",
 		"</tr></thead><tbody>"]
 	for name, basis, rate_desc, qty_desc, total, formula in rows:
 		safe_formula = formula.replace('"', "&quot;")
 		icon = (f"<span class='formula-icon' data-formula=\"{safe_formula}\" data-item=\"{name}\" "
 			f"style='cursor:pointer;color:#8d99a6;font-size:12px;"
 			f"margin-right:4px;text-decoration:underline;text-decoration-style:dotted;'>\u24d8</span>")
-		html.append(f"<tr><td>{name}</td><td>{basis}</td><td>{rate_desc}</td>"
-			f"<td>{qty_desc}</td><td style='text-align:right;'>{icon}{total:,.2f}</td></tr>")
-	html.append(f"<tr style='font-weight:bold;background:#F7F8FA;'>"
-		f"<td colspan='4'>Subtotal (\u0627\u0644\u0645\u062c\u0645\u0648\u0639)</td>"
-		f"<td style='text-align:right;'>{doc.subtotal or 0:,.2f}</td></tr>")
+		html.append(f"<tr><td style='{cell}'><b>{name}</b></td>"
+			f"<td style='{cell}'>{basis}</td><td style='{cell}'>{rate_desc}</td>"
+			f"<td style='{cell}'>{qty_desc}</td>"
+			f"<td style='{cell}text-align:right;white-space:nowrap;font-weight:600;'>"
+			f"{icon}{total:,.2f}</td></tr>")
+	html.append(f"<tr style='font-weight:bold;background:#f8fafc;'>"
+		f"<td colspan='4' style='padding:11px;border-top:1px solid #dfe3e8;'>"
+		f"Subtotal (\u0627\u0644\u0645\u062c\u0645\u0648\u0639)</td>"
+		f"<td style='padding:11px;border-top:1px solid #dfe3e8;text-align:right;white-space:nowrap;'>"
+		f"{doc.subtotal or 0:,.2f}</td></tr>")
 	html.append("</tbody></table></div>")
 	return "".join(html)
