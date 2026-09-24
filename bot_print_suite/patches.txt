@@ -5,3 +5,5 @@
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
 bot_print_suite.patches.backfill_packing_cost
+bot_print_suite.patches.add_cost_driver_calculation_roles
+bot_print_suite.patches.backfill_packing_override_flag

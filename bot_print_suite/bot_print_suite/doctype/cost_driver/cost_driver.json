@@ -5,7 +5,7 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "driver_name", "measurement_basis", "cb1",
+  "driver_name", "calculation_role", "measurement_basis", "cb1",
   "fixed_setup_cost", "is_tiered", "rate",
   "sb_tiers", "tiers",
   "sb_decline", "decline_start_qty", "decline_start_rate", "cb_decline", "decline_floor_qty", "decline_floor_rate",
@@ -14,6 +14,9 @@
  "fields": [
   {"fieldname": "driver_name", "fieldtype": "Data", "label": "Driver Name", "reqd": 1, "unique": 1, "in_list_view": 1,
    "description": "What this cost is called (e.g. Die/Frame, Cutting, Glue - 1 Side, Printing, Packing, Artwork)."},
+  {"fieldname": "calculation_role", "fieldtype": "Select", "label": "Calculation Role", "in_list_view": 1,
+   "options": "\nPrinting\nCutting\nDie\nGlue\nLamination\nPacking",
+   "description": "Technical behavior used by the estimate engine. Templates still decide whether this cost item belongs to a product; this role only tells the engine how a selected row should calculate and which simple form control it follows. Leave blank for ordinary costs such as Artwork, Plate, or Rolling."},
   {"fieldname": "measurement_basis", "fieldtype": "Select", "label": "Measurement Basis", "reqd": 1, "in_list_view": 1,
    "options": "Per cm2\nPer 1000 Sheets\nPer 1000 Pieces\nPer Sheet\nPer Sheet (Declining Rate)\nPer Carton\nPer Side\nPer Colour\nFlat Fee\nPer Hour",
    "description": "What this cost scales with. 'Per 1000 Sheets' and 'Per 1000 Pieces' are deliberately separate - printing scales with physical sheets run through the press, while cutting/glue often scale with finished pieces instead. 'Per Sheet (Declining Rate)' is for a per-sheet cost that gets cheaper continuously as volume grows, down to a floor rate - not discrete tiers like Cutting/Printing, a straight-line interpolation between a confirmed starting rate and a confirmed floor rate (e.g. Lamination: 0.80 SAR/sheet at 1,000 sheets, sliding down to a 0.55 SAR/sheet floor at 150,000 sheets - Mofeed's real numbers, only 2 confirmed points, so linear is the model with the least invented assumption). 'Per Carton' is for Packing: cost = Rate x cartons, where cartons is computed from Sheets Required, the Sheet Size's A4-Equivalent Count, the paper's GSM, and Print Suite Settings' Sheets per Carton - Mofeed's real packing formula, not a flat guess. 'Per Hour' is included even though nothing uses it yet - a hedge so machine-time-based costing (what larger print MIS platforms use) is a natural extension later, not a rebuild."},

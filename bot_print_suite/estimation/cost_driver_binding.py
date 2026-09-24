@@ -11,22 +11,14 @@ connect that pure engine to an actual estimate.
 import frappe
 from bot_print_suite.estimation.cost_driver_engine import compute_cost_driver, compute_cartons
 
-# Driver names whose cost is zeroed when reusing an existing die -
-# matches Golden Arrow's own confirmed rule: repeat customers don't pay
-# for the die again. Matched by substring so "Die / Frame" and any future
-# die-like driver name still gets caught without needing an exact name.
-_DIE_LIKE_KEYWORDS = ("die", "frame", "قالب")
-
 # Cutting is confirmed real physics too (Talha, 2026-08-19): one cutting
 # pass on a stack of press SHEETS produces `ups` finished pieces at once,
 # so the tiered "Per 1000 Pieces" cost (still keyed by piece quantity,
 # per Mofeed's own real data points) needs to be divided by Ups per
 # Sheet to land on the real per-job cutting cost - a 500,000-piece job
 # at 4 ups is really only cutting 125,000 sheets' worth of stacks, not
-# 500,000 individual pieces. Matched by substring, same convention as
-# _DIE_LIKE_KEYWORDS, so "Cutting" and any future cutting-like driver
-# name still gets caught without an exact-name dependency.
-_CUTTING_LIKE_KEYWORDS = ("cutting",)
+# 500,000 individual pieces. Special calculation behavior is selected by
+# Cost Driver metadata, so display names can change without breaking it.
 
 # Real gap found and fixed (Talha, 2026-08-19): the tiered "Per 1000
 # Sheets" Printing driver was blind to single vs double-sided printing -
@@ -38,11 +30,22 @@ _CUTTING_LIKE_KEYWORDS = ("cutting",)
 # happens BEFORE the tier lookup, not just on the final cost - since
 # it's a declining-rate table, doubled volume can land in a cheaper
 # tier bracket entirely, not just double the same rate.
-_PRINTING_LIKE_KEYWORDS = ("printing",)
+ROLE_PRINTING = "Printing"
+ROLE_CUTTING = "Cutting"
+ROLE_DIE = "Die"
+ROLE_GLUE = "Glue"
+ROLE_LAMINATION = "Lamination"
+ROLE_PACKING = "Packing"
 
-_GLUE_LIKE_KEYWORDS = ("glue", "gluing")
-_LAMINATION_LIKE_KEYWORDS = ("lamination", "laminating")
-_PACKING_LIKE_KEYWORDS = ("packing", "packaging")
+
+def _row_has_role(row, role):
+	"""Use Cost Driver metadata, never its editable display name, for behavior."""
+	return (row.get("calculation_role") or
+		frappe.get_cached_value("Cost Driver", row.cost_driver, "calculation_role")) == role
+
+
+def _driver_has_role(driver, role):
+	return driver.get("calculation_role") == role
 
 
 def sync_glue_configuration(doc):
@@ -54,7 +57,7 @@ def sync_glue_configuration(doc):
 	"""
 	glue_rows = [
 		row for row in (doc.get("applied_cost_drivers") or [])
-		if any(keyword in (row.cost_driver or "").lower() for keyword in _GLUE_LIKE_KEYWORDS)
+		if _row_has_role(row, ROLE_GLUE)
 	]
 	if not glue_rows:
 		doc.glue_sides = 0
@@ -75,8 +78,7 @@ def sync_lamination_configuration(doc):
 	"""Keep the simple Lamination checkbox and detailed cost row aligned."""
 	lamination_rows = [
 		row for row in (doc.get("applied_cost_drivers") or [])
-		if any(keyword in (row.cost_driver or "").lower()
-			for keyword in _LAMINATION_LIKE_KEYWORDS)
+		if _row_has_role(row, ROLE_LAMINATION)
 	]
 	if not lamination_rows:
 		doc.lamination_required = 0
@@ -99,8 +101,7 @@ def sync_packing_configuration(doc):
 	"""
 	packing_rows = [
 		row for row in (doc.get("applied_cost_drivers") or [])
-		if any(keyword in (row.cost_driver or "").lower()
-			for keyword in _PACKING_LIKE_KEYWORDS)
+		if _row_has_role(row, ROLE_PACKING)
 	]
 	if not packing_rows:
 		doc.packing_cost_override_enabled = 0
@@ -137,8 +138,10 @@ def apply_template(doc):
 	template = frappe.get_doc("Product Estimation Template", doc.product_template)
 	doc.applied_cost_drivers = []
 	for line in template.drivers:
+		driver_role = frappe.get_cached_value("Cost Driver", line.cost_driver, "calculation_role")
 		doc.append("applied_cost_drivers", {
 			"cost_driver": line.cost_driver,
+			"calculation_role": driver_role,
 			"enabled": 1 if line.default_enabled else 0,
 		})
 	sync_glue_configuration(doc)
@@ -193,10 +196,10 @@ def compute_driver_costs(doc):
 			continue
 
 		driver = frappe.get_cached_doc("Cost Driver", row.cost_driver)
-		is_die_like = any(k in driver.name.lower() for k in _DIE_LIKE_KEYWORDS)
-		is_cutting_like = any(k in driver.name.lower() for k in _CUTTING_LIKE_KEYWORDS)
-		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
-		is_glue_like = any(k in driver.name.lower() for k in _GLUE_LIKE_KEYWORDS)
+		is_die_like = _driver_has_role(driver, ROLE_DIE)
+		is_cutting_like = _driver_has_role(driver, ROLE_CUTTING)
+		is_printing_like = _driver_has_role(driver, ROLE_PRINTING)
+		is_glue_like = _driver_has_role(driver, ROLE_GLUE)
 
 		# Die-reuse rule, confirmed directly by Golden Arrow's estimator:
 		# repeat customers don't pay for the die again on a reorder.
@@ -336,7 +339,7 @@ def _rate_description(driver, doc, row):
 	if driver.is_tiered:
 		basis_qty = doc.sheets_required if basis == "Per 1000 Sheets" else doc.quantity
 		basis_qty = basis_qty or 0
-		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
+		is_printing_like = _driver_has_role(driver, ROLE_PRINTING)
 		if is_printing_like and basis == "Per 1000 Sheets" and doc.get("double_sided"):
 			basis_qty = basis_qty * 2
 		tiers = [(t.qty_from, t.qty_to, t.rate) for t in driver.tiers]
@@ -367,7 +370,7 @@ def _quantity_description(driver, doc):
 	'can Mofeed verify this number himself'."""
 	basis = driver.measurement_basis
 	if basis == "Per cm2":
-		is_die_like = any(k in driver.name.lower() for k in _DIE_LIKE_KEYWORDS)
+		is_die_like = _driver_has_role(driver, ROLE_DIE)
 		if is_die_like:
 			sheet = frappe.get_cached_doc("Sheet Size", doc.sheet_size) if doc.sheet_size else None
 			use_full_sheet = doc.get("die_uses_full_sheet_area", 1)
@@ -382,7 +385,7 @@ def _quantity_description(driver, doc):
 	if basis == "Per Side":
 		return f"{doc.glue_sides or 0:g} sides"
 	if basis in ("Per 1000 Sheets", "Per Sheet", "Per Sheet (Declining Rate)"):
-		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
+		is_printing_like = _driver_has_role(driver, ROLE_PRINTING)
 		if is_printing_like and doc.get("double_sided"):
 			doubled = (doc.sheets_required or 0) * 2
 			return f"{doc.sheets_required or 0:,} sheets \u00d7 2 (double-sided) = {doubled:,} sheet-sides"
@@ -399,8 +402,8 @@ def _quantity_description(driver, doc):
 		)
 		return f"{cartons:,.1f} cartons"
 	if basis == "Per 1000 Pieces":
-		is_cutting_like = any(k in driver.name.lower() for k in _CUTTING_LIKE_KEYWORDS)
-		is_glue_like = any(k in driver.name.lower() for k in _GLUE_LIKE_KEYWORDS)
+		is_cutting_like = _driver_has_role(driver, ROLE_CUTTING)
+		is_glue_like = _driver_has_role(driver, ROLE_GLUE)
 		if is_cutting_like:
 			return f"{doc.quantity or 0:,} pieces \u00f7 {doc.ups or 1} ups"
 		if is_glue_like:
@@ -424,7 +427,7 @@ def _formula_description(driver, doc, row, computed_cost):
 		return f"{driver.rate or 0:,.2f} SAR flat \u2014 no calculation, always this amount"
 
 	if basis == "Per cm2":
-		is_die_like = any(k in driver.name.lower() for k in _DIE_LIKE_KEYWORDS)
+		is_die_like = _driver_has_role(driver, ROLE_DIE)
 		if is_die_like:
 			sheet = frappe.get_cached_doc("Sheet Size", doc.sheet_size) if doc.sheet_size else None
 			use_full_sheet = doc.get("die_uses_full_sheet_area", 1)
@@ -477,9 +480,9 @@ def _formula_description(driver, doc, row, computed_cost):
 		qty = qty or 0
 		if basis == "Per Sheet":
 			return f"{driver.rate:g} SAR/sheet \u00d7 {qty:,} sheets = {computed_cost:,.2f} SAR"
-		is_cutting_like = any(k in driver.name.lower() for k in _CUTTING_LIKE_KEYWORDS)
-		is_printing_like = any(k in driver.name.lower() for k in _PRINTING_LIKE_KEYWORDS)
-		is_glue_like = any(k in driver.name.lower() for k in _GLUE_LIKE_KEYWORDS)
+		is_cutting_like = _driver_has_role(driver, ROLE_CUTTING)
+		is_printing_like = _driver_has_role(driver, ROLE_PRINTING)
+		is_glue_like = _driver_has_role(driver, ROLE_GLUE)
 		double_sided_note = ""
 		if is_printing_like and basis == "Per 1000 Sheets" and doc.get("double_sided"):
 			double_sided_note = f" ({doc.sheets_required or 0:,} sheets \u00d7 2, double-sided)"
@@ -538,7 +541,7 @@ def build_reconciliation_table(doc):
 		if not row.enabled:
 			continue
 		driver = frappe.get_cached_doc("Cost Driver", row.cost_driver)
-		if doc.reusing_existing_die and any(k in driver.name.lower() for k in _DIE_LIKE_KEYWORDS):
+		if doc.reusing_existing_die and _driver_has_role(driver, ROLE_DIE):
 			continue
 		rows.append((driver.name, driver.measurement_basis,
 			_rate_description(driver, doc, row), _quantity_description(driver, doc), row.computed_cost or 0,

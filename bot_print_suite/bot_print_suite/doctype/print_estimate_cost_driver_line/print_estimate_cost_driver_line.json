@@ -4,10 +4,11 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": ["cost_driver", "enabled", "measurement_basis", "computed_cost", "source",
+ "field_order": ["cost_driver", "calculation_role", "enabled", "measurement_basis", "computed_cost", "source",
   "cost_override_enabled", "cost_override", "override_reason"],
  "fields": [
   {"fieldname": "cost_driver", "fieldtype": "Link", "label": "Cost Item", "options": "Cost Driver", "reqd": 1, "in_list_view": 1},
+  {"fieldname": "calculation_role", "fieldtype": "Data", "label": "Calculation Role", "read_only": 1, "hidden": 1, "fetch_from": "cost_driver.calculation_role"},
   {"fieldname": "enabled", "fieldtype": "Check", "label": "Use", "default": "1", "in_list_view": 1,
    "description": "Uncheck to drop this cost from this specific job without deleting the row - the row stays visible so it's clear it was deliberately excluded, not forgotten."},
   {"fieldname": "measurement_basis", "fieldtype": "Data", "label": "Basis", "read_only": 1, "fetch_from": "cost_driver.measurement_basis"},

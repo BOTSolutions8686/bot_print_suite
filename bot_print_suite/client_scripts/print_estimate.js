@@ -90,9 +90,9 @@ function highlight_ups_override(frm) {
 // These two simple finishing inputs are convenience controls for rows in
 // the native Cost Items grid. Keep the row state visible immediately; the
 // server remains the single authority for rates and totals when the user saves.
-function sync_cost_row_enabled(frm, keyword, enabled) {
+function sync_cost_row_enabled(frm, role, enabled) {
 	const row = (frm.doc.applied_cost_drivers || []).find(r =>
-		(r.cost_driver || '').toLowerCase().includes(keyword));
+		r.calculation_role === role);
 	if (!row || Boolean(row.enabled) === Boolean(enabled)) return Promise.resolve();
 	return frappe.model.set_value(row.doctype, row.name, 'enabled', enabled ? 1 : 0)
 		.then(() => frm.refresh_field('applied_cost_drivers'));
@@ -100,7 +100,7 @@ function sync_cost_row_enabled(frm, keyword, enabled) {
 
 function sync_packing_override(frm) {
 	const row = (frm.doc.applied_cost_drivers || []).find(r =>
-		(r.cost_driver || '').toLowerCase().includes('packing'));
+		r.calculation_role === 'Packing');
 	if (!row) return Promise.resolve();
 	const manual = Boolean(frm.doc.packing_cost_override_enabled);
 	frm.__bps_syncing_packing = true;
@@ -224,7 +224,7 @@ frappe.ui.form.on('Print Estimate', {
 	glue_sides: function(frm) {
 		if (frm.__bps_syncing_finishing) return;
 		frm.__bps_syncing_finishing = true;
-		sync_cost_row_enabled(frm, 'glue', cint(frm.doc.glue_sides) > 0)
+		sync_cost_row_enabled(frm, 'Glue', cint(frm.doc.glue_sides) > 0)
 			.finally(() => {
 				frm.__bps_syncing_finishing = false;
 				prompt_finishing_recalculation(frm);
@@ -233,7 +233,7 @@ frappe.ui.form.on('Print Estimate', {
 	lamination_required: function(frm) {
 		if (frm.__bps_syncing_finishing) return;
 		frm.__bps_syncing_finishing = true;
-		sync_cost_row_enabled(frm, 'lamination', Boolean(frm.doc.lamination_required))
+		sync_cost_row_enabled(frm, 'Lamination', Boolean(frm.doc.lamination_required))
 			.finally(() => {
 				frm.__bps_syncing_finishing = false;
 				prompt_finishing_recalculation(frm);
@@ -258,7 +258,7 @@ frappe.ui.form.on('Print Estimate Cost Driver Line', {
 		highlight_overridden_rows(frm);
 		const row = locals[cdt] && locals[cdt][cdn];
 		if (!row || frm.__bps_syncing_packing ||
-			!(row.cost_driver || '').toLowerCase().includes('packing')) return;
+			row.calculation_role !== 'Packing') return;
 		frm.__bps_syncing_packing = true;
 		Promise.all([
 			frm.set_value('packing_cost_override_enabled', row.cost_override_enabled ? 1 : 0),
@@ -269,7 +269,7 @@ frappe.ui.form.on('Print Estimate Cost Driver Line', {
 	cost_override: function(frm, cdt, cdn) {
 		const row = locals[cdt][cdn];
 		if (frm.__bps_syncing_packing || !row.cost_override_enabled ||
-			!(row.cost_driver || '').toLowerCase().includes('packing')) return;
+			row.calculation_role !== 'Packing') return;
 		frm.__bps_syncing_packing = true;
 		frm.set_value('packing_cost', flt(row.cost_override))
 			.finally(() => { frm.__bps_syncing_packing = false; });
@@ -277,12 +277,11 @@ frappe.ui.form.on('Print Estimate Cost Driver Line', {
 	enabled: function(frm, cdt, cdn) {
 		if (frm.__bps_syncing_finishing) return;
 		const row = locals[cdt][cdn];
-		const name = (row.cost_driver || '').toLowerCase();
 		frm.__bps_syncing_finishing = true;
 		let update = Promise.resolve();
-		if (name.includes('lamination')) {
+		if (row.calculation_role === 'Lamination') {
 			update = frm.set_value('lamination_required', row.enabled ? 1 : 0);
-		} else if (name.includes('glue')) {
+		} else if (row.calculation_role === 'Glue') {
 			update = frm.set_value('glue_sides', row.enabled ? Math.max(1, cint(frm.doc.glue_sides)) : 0);
 		}
 		Promise.resolve(update).finally(() => {
